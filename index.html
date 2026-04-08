@@ -4,248 +4,361 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FITNESS QUEST - OVERDRIVE</title>
+    <link rel="manifest" href="manifest.json">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00f3ff">
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --neon-cyan: #00f3ff; --neon-pink: #ff0055; --neon-green: #39ff14; }
+        :root { 
+            --cyan: #00f3ff; --pink: #ff0055; --green: #39ff14; --dark: #060608;
+            --glass: rgba(10, 10, 20, 0.85);
+        }
+        
         body { 
-            background-color: #060608; color: white; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; overflow-x: hidden; min-height: 100vh;
-            background-image: radial-gradient(circle at 50% 20%, #11111d 0%, #060608 100%);
+            background-color: var(--dark); color: white; font-family: 'Rajdhani', sans-serif; 
+            margin: 0; overflow: hidden; height: 100vh; width: 100vw;
+            background-image: radial-gradient(circle at 50% -20%, #1a1a2e 0%, var(--dark) 100%);
         }
+
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass { background: rgba(6, 6, 12, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(0, 243, 255, 0.15); }
+        
+        /* Grille animée 3D */
         .cyber-grid { 
-            position: fixed; inset: 0; 
-            background-image: linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px), 
-                              linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px); 
-            background-size: 45px 45px; z-index: -1; 
+            position: fixed; inset: 0; z-index: -1;
+            background-image: 
+                linear-gradient(var(--cyan) 1px, transparent 1px), 
+                linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
+            background-size: 45px 45px;
+            opacity: 0.05;
+            transform: perspective(1000px) rotateX(60deg) translateY(-100px);
+            animation: grid-scroll 30s linear infinite;
         }
-        .progress-bar { height: 6px; background: rgba(0, 243, 255, 0.1); border-radius: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); transition: width 0.5s ease; }
-        @keyframes glitch { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 100% { transform: translate(0) } }
-        .glitch-hover:hover { animation: glitch 0.3s infinite; }
+        @keyframes grid-scroll { from { background-position: 0 0; } to { background-position: 0 45px; } }
+
+        /* Scanline & Glitch */
+        .scanline {
+            width: 100%; height: 4px; background: rgba(0, 243, 255, 0.1);
+            position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none;
+            animation: scan 6s linear infinite;
+        }
+        @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
+
+        /* Classes Utilitaires Cyber */
+        .glass-panel { 
+            background: var(--glass); backdrop-filter: blur(15px); 
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+
+        .cyber-btn {
+            position: relative; clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; justify-content: center; font-weight: 900;
+        }
+        .cyber-btn:active { transform: scale(0.95); filter: brightness(1.2); }
+
+        .progress-container { height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; overflow: hidden; }
+        .progress-value { height: 100%; transition: width 1.5s cubic-bezier(0.1, 0, 0, 1); }
+
+        /* Personnage CSS */
+        .avatar-core {
+            filter: drop-shadow(0 0 15px var(--glow));
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .custom-scroll::-webkit-scrollbar { width: 0px; }
     </style>
 </head>
 <body>
     <div class="cyber-grid"></div>
+    <div class="scanline"></div>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
+        const { motion, AnimatePresence } = window.Motion;
 
-        const LEVEL_NAMES = ["WELCOME", "INITIÉ", "RECRUE", "CADET", "ASPIRANT", "SOLDAT", "SENTINELLE", "GARDIEN", "ÉCLAIREUR", "ROVER", "COBALT", "CYBER-NEURONE", "FRAGMENT", "DATA-MAN", "CODE-RUNNER", "TECHNO-SCAN", "BIT-WARRIOR", "CIRCUIT", "SILICIUM", "PROCESSEUR", "AUGMENTÉ", "CYBORG", "HYBRIDE", "VANGUARD", "STALKER", "PULSE", "VECTOR", "RAZOR", "BLADE", "SABRE", "STRIKER", "COMMANDO", "RANGER", "HUNTER", "ASSASSIN", "PHANTOM", "GHOST", "SHADOW", "NIGHT-FALL", "VOID", "ORBITAL", "ASTRO", "NEBULA", "SUPERNOVA", "QUASAR", "PULSAR", "COSMOS", "GALAXY", "TITAN", "ATLAS", "HERCULE", "SPARTIATE", "SAMOURAÏ", "RONIN", "SHOGUN", "DAIMYO", "EMPEREUR", "DRAGON", "PHOENIX", "CHIMÈRE", "OVERDRIVE", "TURBO", "NITRO", "VULCAIN", "PROMETHEE", "ICARE", "ZEUS", "ARES", "HADÈS", "OLYMPE", "CYBER-LORD", "ARCHITECTE", "MAIN-FRAME", "CORE-SYSTEM", "KERNEL", "ROOT", "ADMIN", "OVERSEER", "ORACLE", "MONOLITHE", "ÉTERNEL", "INFINI", "IMMORTEL", "DIVIN", "CELESTE", "ANCIEN", "MYTHIQUE", "TRANSCENDANT", "ECLIPSE", "ZENITH", "APEX", "OMEGA", "ALPHA", "SUPRÊME", "ABSOLU", "DOMINATEUR", "LÉGENDE", "MYTHE", "DIEU-SOLEIL", "ULTRAMAN"];
+        const TITLES = ["NEOPHYTE", "USER", "RUNNER", "HACKER", "GLITCH", "OPERATOR", "AGENT", "ENFORCER", "ELITE", "SPECTRE", "GHOST", "CHRONOS", "VECTOR", "NEXUS", "CYBER-LORD", "OVERDRIVE"];
 
-        // COMPOSANT AUDIO
-        const AudioController = () => {
-            const [isPlaying, setIsPlaying] = useState(false);
-            const audioRef = useRef(new Audio('music.mp3'));
-
-            useEffect(() => {
-                const audio = audioRef.current;
-                audio.loop = true;
-                audio.volume = 0.4;
-                return () => audio.pause();
-            }, []);
-
-            const togglePlay = () => {
-                if (isPlaying) {
-                    audioRef.current.pause();
-                } else {
-                    audioRef.current.play().catch(err => console.log("Interaction utilisateur requise"));
-                }
-                setIsPlaying(!isPlaying);
-            };
-
+        // --- COMPOSANT AVATAR ---
+        const EvolutionAvatar = ({ level, isCali }) => {
+            const glowColor = isCali ? "#39ff14" : (level >= 50 ? "#ff0055" : "#00f3ff");
             return (
-                <button onClick={togglePlay} className="w-10 h-10 glass rounded-full flex items-center justify-center border border-cyan-500/30 active:scale-90 transition-all">
-                    <span className="text-lg">{isPlaying ? '🔊' : '🔇'}</span>
-                </button>
+                <div className="relative w-48 h-48 mx-auto flex items-center justify-center avatar-core" style={{"--glow": glowColor}}>
+                    {/* Anneaux extérieurs */}
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                        className="absolute w-full h-full border-2 border-dashed rounded-full" style={{ borderColor: glowColor, opacity: 0.3 }} />
+                    <motion.div animate={{ rotate: -360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                        className="absolute w-4/5 h-4/5 border border-double rounded-full" style={{ borderColor: glowColor, opacity: 0.5 }} />
+                    
+                    {/* Noyau Central */}
+                    <div className="relative w-24 h-24 flex items-center justify-center">
+                        <div className="absolute inset-0 rounded-lg rotate-45 border-4" style={{ borderColor: glowColor }}></div>
+                        <div className="absolute inset-2 bg-white/10 backdrop-blur-md rounded-sm"></div>
+                        <span className="font-orbitron text-2xl font-black" style={{ color: glowColor }}>
+                            {level}
+                        </span>
+                    </div>
+
+                    {/* Éléments additionnels selon niveau */}
+                    {level > 10 && <div className="absolute -top-2 w-1 h-8" style={{ backgroundColor: glowColor }}></div>}
+                    {level > 30 && <div className="absolute -bottom-2 w-1 h-8" style={{ backgroundColor: glowColor }}></div>}
+                    {isCali && (
+                        <div className="absolute inset-0 animate-pulse border-4 rounded-full" style={{ borderColor: glowColor, opacity: 0.2 }}></div>
+                    )}
+                </div>
             );
         };
 
+        // --- COMPOSANT PRINCIPAL ---
         const App = () => {
             const [tab, setTab] = useState('train');
-            const [loading, setLoading] = useState(true);
             const [completed, setCompleted] = useState({});
             const [sideQuest, setSideQuest] = useState(null);
-            
-            const [gameState, setGameState] = useState(() => {
-                const saved = localStorage.getItem('FQ_V9_PWA');
-                return saved ? JSON.parse(saved) : { 
-                    user: null, trophies: 0, streak: 0, xp: 0, level: 1, restUntil: null 
+            const [isInitialLoad, setIsInitialLoad] = useState(true);
+            const audioRef = useRef(new Audio('music.mp3'));
+            const [isPlaying, setIsPlaying] = useState(false);
+
+            const [state, setState] = useState(() => {
+                const saved = localStorage.getItem('FQ_OVERDRIVE_V2');
+                return saved ? JSON.parse(saved) : {
+                    user: null, trophies: 0, xp: 0, level: 1, streak: 0, 
+                    dailyWorkouts: 0, lastDate: null, totalSessions: 0
                 };
             });
 
+            // Sauvegarde & Sync Date
             useEffect(() => {
-                localStorage.setItem('FQ_V9_PWA', JSON.stringify(gameState));
-            }, [gameState]);
+                localStorage.setItem('FQ_OVERDRIVE_V2', JSON.stringify(state));
+                const today = new Date().toDateString();
+                if (state.lastDate !== today) {
+                    setState(s => ({ ...s, dailyWorkouts: 0, lastDate: today }));
+                }
+                if (isInitialLoad) {
+                    setTimeout(() => { setIsInitialLoad(false); generateQuest(); }, 2000);
+                }
+            }, [state]);
 
-            useEffect(() => {
-                const timer = setTimeout(() => {
-                    generateQuest();
-                    setLoading(false);
-                }, 2000);
-                return () => clearTimeout(timer);
-            }, []);
+            const isCali = state.trophies >= 2000;
+            const reqXP = state.level * 40; 
+            const title = TITLES[Math.floor(state.level / 7)] || "ULTRAMAN";
 
-            const generateQuest = () => {
-                const tasks = [
-                    { n: "Rush Cardio", ex: "Jumping Jacks", b: 40 },
-                    { n: "Core Focus", ex: "Crunchs", b: 30 },
-                    { n: "Statics", ex: "Chaise (sec)", b: 45 },
-                    { n: "Burn Out", ex: "Burpees", b: 10 }
-                ];
-                const q = tasks[Math.floor(Math.random() * tasks.length)];
-                setSideQuest({ ...q, reps: q.b + (gameState.level * 2) });
+            const toggleMusic = () => {
+                if(isPlaying) audioRef.current.pause();
+                else { audioRef.current.loop = true; audioRef.current.play().catch(() => {}); }
+                setIsPlaying(!isPlaying);
             };
 
-            const addXP = (val) => {
-                setGameState(prev => {
-                    let nXp = prev.xp + val;
-                    let nLvl = prev.level;
-                    while (nXp >= 100 && nLvl < 100) {
-                        nXp -= 100;
-                        nLvl += 1;
-                        alert(`UPGRADE SYSTEM : NIVEAU ${nLvl} [${LEVEL_NAMES[nLvl-1]}]`);
+            const generateQuest = () => {
+                const pool = [
+                    { id: 'q1', n: "Flux Cardio", ex: "Mountain Climbers", r: 30 + state.level },
+                    { id: 'q2', n: "Neural Core", ex: "Leg Raises", r: 20 + state.level },
+                    { id: 'q3', n: "Static Lock", ex: "Gainage (sec)", r: 40 + state.level }
+                ];
+                setSideQuest(pool[Math.floor(Math.random() * pool.length)]);
+            };
+
+            const handleXP = (amount) => {
+                setState(s => {
+                    let newXP = s.xp + amount;
+                    let newLvl = s.level;
+                    let currentReq = newLvl * 40;
+                    while (newXP >= currentReq && newLvl < 100) {
+                        newXP -= currentReq;
+                        newLvl++;
+                        currentReq = newLvl * 40;
+                        alert(`SYSTEM UPGRADE: NIVEAU ${newLvl} DÉVERROUILLÉ`);
                     }
-                    return { ...prev, xp: nXp, level: nLvl };
+                    return { ...s, xp: newXP, level: newLvl };
                 });
             };
 
+            const finalizeSession = () => {
+                if (Object.keys(completed).length < 4) return;
+                const reward = state.dailyWorkouts === 0 ? 15 : 10;
+                setState(s => ({
+                    ...s, 
+                    trophies: s.trophies + reward,
+                    dailyWorkouts: s.dailyWorkouts + 1,
+                    totalSessions: s.totalSessions + 1,
+                    streak: s.streak + 1
+                }));
+                setCompleted({});
+            };
+
             const exercises = useMemo(() => {
-                const t = gameState.trophies;
-                const b = Math.floor(t / 25);
-                return [
-                    { id: 1, n: t > 2000 ? "Pompes Diamant" : "Pompes", r: 15 + b, i: "🦾", c: "#00f3ff" },
-                    { id: 2, n: t > 1200 ? "Tractions" : "Australiennes", r: 8 + Math.floor(b/2), i: "⚔️", c: "#ff0055" },
-                    { id: 3, n: t > 800 ? "Dips Barres" : "Dips Chaise", r: 12 + b, i: "⚖️", c: "#a855f7" },
-                    { id: 4, n: t > 2000 ? "Squat Jumps" : "Squats", r: 20 + b, i: "🦵", c: "#39ff14" }
+                const base = Math.floor(state.trophies / 60);
+                if (isCali) return [
+                    { id: 1, n: "Type-I: Muscle Up", r: 5 + Math.floor(base/4), i: "⚡", c: "var(--green)" },
+                    { id: 2, n: "Type-II: Archer Pushups", r: 12 + base, i: "🏹", c: "var(--green)" },
+                    { id: 3, n: "Type-III: Front Lever Iso", r: 15 + base, i: "⚓", c: "var(--green)" },
+                    { id: 4, n: "Type-IV: Pistol Squats", r: 10 + Math.floor(base/2), i: "🎯", c: "var(--green)" }
                 ];
-            }, [gameState.trophies]);
+                return [
+                    { id: 1, n: "Protocol: Pompes", r: 15 + base, i: "🦾", c: "var(--cyan)" },
+                    { id: 2, n: "Protocol: Tractions", r: 8 + Math.floor(base/2), i: "⚔️", c: "var(--pink)" },
+                    { id: 3, n: "Protocol: Dips", r: 12 + base, i: "⚖️", c: "#a855f7" },
+                    { id: 4, n: "Protocol: Squats", r: 20 + base, i: "🦵", c: "var(--green)" }
+                ];
+            }, [state.trophies, isCali]);
 
-            if (loading) return (
+            if (isInitialLoad) return (
                 <div className="h-screen flex flex-col items-center justify-center bg-black">
-                    <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="font-orbitron text-xs tracking-[0.5em] text-cyan-400 animate-pulse">OS_BOOTING...</p>
+                    <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ duration: 2, repeat: Infinity }}
+                        className="font-orbitron text-2xl tracking-[1em] text-cyan-400">BOOTING_CORE...</motion.div>
                 </div>
             );
 
-            if (!gameState.user) return (
-                <div className="h-screen p-8 flex flex-col justify-center max-w-sm mx-auto">
-                    <h1 className="font-orbitron text-4xl mb-2 italic text-white">FITNESS QUEST</h1>
-                    <div className="h-1 w-20 bg-pink-600 mb-8"></div>
-                    <input id="un" type="text" placeholder="NOM_DE_CODE" className="bg-white/5 border border-white/20 p-4 font-orbitron text-white outline-none mb-4 rounded-lg uppercase" />
-                    <button onClick={() => {
-                        const val = document.getElementById('un').value;
-                        if(val) setGameState(p => ({...p, user: val.toUpperCase()}));
-                    }} className="bg-cyan-500 text-black p-4 font-orbitron font-black rounded-lg">INITIALISER</button>
+            if (!state.user) return (
+                <div className="h-screen flex items-center justify-center p-8">
+                    <div className="glass-panel p-10 rounded-3xl w-full max-w-sm text-center">
+                        <h1 className="font-orbitron text-4xl font-black mb-2">IDENTIFICATION</h1>
+                        <p className="text-cyan-500 text-xs tracking-widest mb-10 uppercase">Nouvelle Unité Détectée</p>
+                        <input id="userName" type="text" placeholder="ENTREZ ID" className="w-full bg-white/5 border-b-2 border-cyan-500 p-4 font-orbitron text-white outline-none mb-10 text-center" />
+                        <button onClick={() => {
+                            const val = document.getElementById('userName').value;
+                            if(val) setState(s => ({...s, user: val.toUpperCase()}));
+                        }} className="cyber-btn bg-cyan-500 text-black w-full py-4 text-xl">ACTIVER</button>
+                    </div>
                 </div>
             );
-
-            const isRest = gameState.restUntil && new Date().getTime() < gameState.restUntil;
 
             return (
-                <div className="max-w-md mx-auto min-h-screen p-5 pb-32">
-                    <header className="glass p-5 rounded-2xl border-b-2 border-cyan-500 mb-6 flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <AudioController />
+                <div className="flex flex-col h-screen max-w-md mx-auto p-6 relative">
+                    {/* Header */}
+                    <header className="flex justify-between items-start mb-8 z-10">
+                        <div className="flex items-center gap-4">
+                            <button onClick={toggleMusic} className="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-xl">
+                                {isPlaying ? '🔊' : '🔇'}
+                            </button>
                             <div>
-                                <span className="text-[10px] text-pink-500 font-black tracking-widest">{LEVEL_NAMES[gameState.level-1]}</span>
-                                <h2 className="font-orbitron text-xl text-white">{gameState.user}</h2>
+                                <h2 className="font-orbitron text-xl font-black leading-none">{state.user}</h2>
+                                <p className="text-pink-500 text-[10px] font-black tracking-widest mt-1 uppercase">{title}</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <span className="text-2xl font-orbitron font-black text-cyan-400">{gameState.trophies}🏆</span>
-                            <div className="w-20 progress-bar mt-1"><div className="progress-fill" style={{width: `${gameState.xp}%`}}></div></div>
+                            <div className="font-orbitron text-3xl font-black">{state.trophies}<span className="text-cyan-400 text-sm ml-1">🏆</span></div>
+                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Niveau {state.level}</div>
                         </div>
                     </header>
 
-                    <main>
-                        {tab === 'train' ? (
-                            <div className="space-y-4">
-                                {isRest ? (
-                                    <div className="py-20 text-center glass border-green-500 rounded-3xl">
-                                        <div className="text-5xl mb-4">🔋</div>
-                                        <p className="font-orbitron text-green-400 text-sm">MAINTENANCE EN COURS</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {sideQuest && (
-                                            <div className="p-4 border border-yellow-500/40 bg-yellow-500/5 rounded-2xl flex justify-between items-center mb-4">
-                                                <div>
-                                                    <p className="text-[10px] font-black text-yellow-500">BOOST OPTIONNEL (+30 XP)</p>
-                                                    <p className="font-orbitron text-lg">{sideQuest.reps} {sideQuest.ex}</p>
-                                                </div>
-                                                <button onClick={() => { addXP(30); setSideQuest(null); }} className="bg-yellow-500 text-black text-[10px] px-4 py-2 rounded font-bold">REÇU</button>
-                                            </div>
-                                        )}
-                                        <div className="grid gap-3">
-                                            {exercises.map(ex => (
-                                                <div key={ex.id} onClick={() => setCompleted(p => ({...p, [ex.id]: !p[ex.id]}))}
-                                                     className={`p-4 rounded-xl glass border-l-4 transition-all cursor-pointer flex justify-between items-center ${completed[ex.id] ? 'opacity-100 border-white bg-white/10' : 'opacity-60'}`}
-                                                     style={{borderLeftColor: ex.c}}>
-                                                    <div className="flex items-center gap-4">
-                                                        <span className="text-3xl">{ex.i}</span>
-                                                        <div>
-                                                            <p className="text-[10px] uppercase font-bold" style={{color: ex.c}}>{ex.n}</p>
-                                                            <p className="text-2xl font-orbitron">{ex.r}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className={`w-6 h-6 rounded-full border-2 ${completed[ex.id] ? 'bg-cyan-500' : ''}`}></div>
-                                                </div>
-                                            ))}
+                    {/* Progress Global */}
+                    <div className="mb-10 px-2">
+                        <div className="flex justify-between text-[9px] font-black uppercase mb-1 text-cyan-500/70">
+                            <span>Synchronization XP</span>
+                            <span>{state.xp} / {reqXP}</span>
+                        </div>
+                        <div className="progress-container">
+                            <div className="progress-value bg-cyan-400 shadow-[0_0_10px_#00f3ff]" style={{width: `${(state.xp/reqXP)*100}%`}}></div>
+                        </div>
+                    </div>
+
+                    {/* Main Container */}
+                    <main className="flex-1 overflow-y-auto custom-scroll pb-32">
+                        <AnimatePresence mode="wait">
+                            {tab === 'train' ? (
+                                <motion.div key="t" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+                                    {state.dailyWorkouts >= 2 ? (
+                                        <div className="glass-panel p-12 rounded-3xl text-center">
+                                            <div className="text-6xl mb-6">🔒</div>
+                                            <h3 className="font-orbitron text-xl text-pink-500 mb-2">CAPACITÉ ATTEINTE</h3>
+                                            <p className="text-xs text-gray-500 uppercase tracking-widest">Réinitialisation des protocoles à minuit</p>
                                         </div>
-                                        <button onClick={() => {
-                                            if(Object.keys(completed).length < 4) return alert("SÉQUENCE INCOMPLÈTE");
-                                            setGameState(p => ({...p, trophies: p.trophies + 20, streak: p.streak + 1}));
-                                            setCompleted({}); addXP(15);
-                                            alert("MISSION TERMINÉE !");
-                                        }} className="w-full py-4 bg-white text-black font-orbitron font-black mt-4 rounded-xl">UPLOAD SESSION</button>
-                                    </>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="glass p-6 rounded-3xl text-center">
-                                    <div className="text-4xl mb-2">💠</div>
-                                    <h3 className="font-orbitron text-xl">{LEVEL_NAMES[gameState.level-1]}</h3>
-                                    <p className="text-cyan-400 text-xs tracking-widest">GRADE {gameState.level} / 100</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="glass p-4 rounded-xl text-center">
-                                        <p className="text-[10px] text-gray-500 uppercase">Série</p>
-                                        <p className="text-2xl font-orbitron">{gameState.streak} J</p>
+                                    ) : (
+                                        <>
+                                            {/* Quête Secondaire */}
+                                            {sideQuest && (
+                                                <div className="glass-panel p-5 border-yellow-500/30 bg-yellow-500/5 rounded-2xl flex justify-between items-center animate-pulse">
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-yellow-500 uppercase mb-1">Boost Latent (+40 XP)</p>
+                                                        <p className="font-orbitron text-lg">{sideQuest.r} {sideQuest.ex}</p>
+                                                    </div>
+                                                    <button onClick={() => { handleXP(40); setSideQuest(null); }} 
+                                                        className="bg-yellow-500 text-black p-3 font-black rounded-lg text-xs">OK</button>
+                                                </div>
+                                            )}
+
+                                            <div className="grid gap-4">
+                                                {exercises.map(ex => (
+                                                    <motion.div 
+                                                        whileTap={{ scale: 0.98 }}
+                                                        key={ex.id} 
+                                                        onClick={() => setCompleted(c => ({...c, [ex.id]: !c[ex.id]}))}
+                                                        className={`glass-panel p-6 rounded-2xl flex justify-between items-center border-l-4 transition-all ${completed[ex.id] ? 'opacity-100 border-white bg-white/10' : 'opacity-60 border-cyan-500'}`}
+                                                        style={{ borderLeftColor: completed[ex.id] ? 'white' : ex.c }}
+                                                    >
+                                                        <div className="flex items-center gap-5">
+                                                            <span className="text-4xl">{ex.i}</span>
+                                                            <div>
+                                                                <p className="text-[10px] font-black uppercase tracking-widest" style={{color: ex.c}}>{ex.n}</p>
+                                                                <p className="text-3xl font-orbitron leading-none mt-1">{ex.r}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className={`w-8 h-8 rounded border-2 flex items-center justify-center ${completed[ex.id] ? 'bg-cyan-500 border-cyan-400' : 'border-white/10'}`}>
+                                                            {completed[ex.id] && <span className="text-black font-black">✓</span>}
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+
+                                            <button 
+                                                onClick={finalizeSession}
+                                                className={`w-full py-6 mt-6 cyber-btn text-xl font-black ${Object.keys(completed).length === 4 ? 'bg-white text-black' : 'bg-white/5 text-white/20'}`}
+                                            >
+                                                TRANSMETTRE DONNÉES
+                                            </button>
+                                        </>
+                                    )}
+                                </motion.div>
+                            ) : (
+                                <motion.div key="p" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="text-center">
+                                    <EvolutionAvatar level={state.level} isCali={isCali} />
+                                    
+                                    <div className="mt-8 space-y-4">
+                                        <div className="glass-panel p-6 rounded-3xl">
+                                            <h4 className="font-orbitron text-2xl font-black text-white">{state.user}</h4>
+                                            <div className="h-0.5 w-16 bg-cyan-500 mx-auto my-3"></div>
+                                            <p className="text-[10px] text-gray-500 uppercase tracking-[0.5em] font-black">Pilote de Rang S</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="glass-panel p-5 rounded-2xl">
+                                                <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Total Sessions</p>
+                                                <p className="text-3xl font-orbitron text-cyan-400">{state.totalSessions}</p>
+                                            </div>
+                                            <div className="glass-panel p-5 rounded-2xl">
+                                                <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Série Actuelle</p>
+                                                <p className="text-3xl font-orbitron text-pink-500">{state.streak}j</p>
+                                            </div>
+                                        </div>
+
+                                        <button 
+                                            onClick={() => { if(confirm("FORMATEUR LE NOYAU ?")) { localStorage.clear(); location.reload(); }}}
+                                            className="w-full p-4 border border-pink-500/30 text-pink-500 font-orbitron text-xs tracking-widest rounded-2xl mt-12 opacity-40 hover:opacity-100 transition-opacity"
+                                        >
+                                            HARD_RESET_CORE
+                                        </button>
                                     </div>
-                                    <div className="glass p-4 rounded-xl text-center">
-                                        <p className="text-[10px] text-gray-500 uppercase">Score</p>
-                                        <p className="text-2xl font-orbitron">{gameState.trophies}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => {
-                                    if(confirm("Activer hibernation (15h) ?")) 
-                                        setGameState(p => ({...p, restUntil: new Date().getTime() + 15*60*60*1000}));
-                                }} className="w-full p-4 border border-green-500 text-green-500 font-orbitron text-xs rounded-xl">HIBERNATION</button>
-                            </div>
-                        )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </main>
 
-                    <nav className="fixed bottom-6 left-6 right-6 h-16 glass rounded-full flex items-center justify-around z-50">
-                        <button onClick={() => setTab('train')} className={`flex flex-col items-center ${tab === 'train' ? 'text-cyan-400' : 'opacity-30'}`}>
-                            <span className="text-xl">⚔</span>
-                            <span className="text-[8px] font-black uppercase">Combat</span>
+                    {/* Navbar */}
+                    <nav className="fixed bottom-8 left-8 right-8 h-20 glass-panel rounded-3xl flex items-center justify-around z-50 border border-white/10">
+                        <button onClick={() => setTab('train')} className={`flex flex-col items-center gap-1 transition-all ${tab === 'train' ? 'text-cyan-400 scale-110' : 'opacity-30'}`}>
+                            <span className="text-2xl">⚡</span>
+                            <span className="text-[9px] font-black uppercase tracking-tighter">Combat</span>
                         </button>
-                        <button onClick={() => setTab('profile')} className={`flex flex-col items-center ${tab === 'profile' ? 'text-cyan-400' : 'opacity-30'}`}>
-                            <span className="text-xl">👤</span>
-                            <span className="text-[8px] font-black uppercase">Noyau</span>
+                        <button onClick={() => setTab('profile')} className={`flex flex-col items-center gap-1 transition-all ${tab === 'profile' ? 'text-cyan-400 scale-110' : 'opacity-30'}`}>
+                            <span className="text-2xl">💾</span>
+                            <span className="text-[9px] font-black uppercase tracking-tighter">Système</span>
                         </button>
                     </nav>
                 </div>
@@ -255,14 +368,9 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
 
-        // ENREGISTREMENT DU SERVICE WORKER POUR LE HORS-CONNEXION
-      if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Système de survie (SW) activé !'))
-            .catch(err => console.log('Échec du SW', err));
-    });
-}
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+        }
     </script>
 </body>
 </html>
