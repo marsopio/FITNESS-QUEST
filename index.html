@@ -3,289 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FITNESS QUEST - OVERDRIVE V5.0</title>
-    <link rel="manifest" href="manifest.json">
+    <title>FITNESS QUEST - OMNI V11</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        /* --- DESIGN SYSTEM --- */
         :root { 
-            --cyan: #00f3ff; --pink: #ff0055; --violet: #bc13fe; --dark: #020205; 
-            --neon-glow: 0 0 15px rgba(0, 243, 255, 0.3);
+            --cyan: #00f3ff; 
+            --pink: #ff0055; 
+            --violet: #bc13fe; 
+            --dark-bg: #030308;
+            --glass-bg: rgba(10, 10, 25, 0.95);
         }
 
         body { 
-            background: var(--dark); color: white; font-family: 'Rajdhani', sans-serif; 
-            overflow: hidden; height: 100vh; margin: 0;
+            background: var(--dark-bg); 
+            color: #ffffff; 
+            font-family: 'Rajdhani', sans-serif; 
+            overflow: hidden; 
+            height: 100vh; 
+            user-select: none;
         }
 
-        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-o { font-family: 'Orbitron', sans-serif; }
 
-        /* FX Scanlines */
-        body::before {
-            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 100; background-size: 100% 2px, 3px 100%; pointer-events: none;
-        }
-
-        .cyber-grid {
+        /* --- ANIMATED BACKGROUND --- */
+        .grid-bg {
             position: fixed; inset: 0; z-index: -1;
-            background-image: linear-gradient(var(--cyan) 1px, transparent 1px), 
-                              linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
-            background-size: 40px 40px; opacity: 0.03;
-            transform: perspective(500px) rotateX(60deg) translateY(-100px);
-            animation: grid-move 20s linear infinite;
-        }
-        @keyframes grid-move { from { background-position: 0 0; } to { background-position: 0 40px; } }
-
-        .glass-card { 
-            background: rgba(8, 8, 16, 0.92); backdrop-filter: blur(10px); 
-            border: 1px solid rgba(0, 243, 255, 0.15); box-shadow: var(--neon-glow);
+            background-image: 
+                linear-gradient(var(--cyan) 1px, transparent 1px), 
+                linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
+            background-size: 60px 60px; 
+            opacity: 0.05;
+            transform: perspective(800px) rotateX(60deg) translateY(-150px);
+            animation: grid-scroll 25s linear infinite;
         }
 
-        .cyber-btn {
-            clip-path: polygon(8% 0, 100% 0, 100% 75%, 92% 100%, 0 100%, 0 25%);
-            transition: all 0.2s ease;
+        @keyframes grid-scroll {
+            from { background-position: 0 0; }
+            to { background-position: 0 60px; }
         }
 
-        .avatar-container { position: relative; width: 140px; height: 140px; margin: auto; }
-        .avatar-ring {
-            position: absolute; inset: 0; border: 1px solid var(--violet);
-            border-radius: 50%; animation: rotate-ring 12s linear infinite; opacity: 0.3;
+        /* --- UI COMPONENTS --- */
+        .glass-panel { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(25px); 
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
         }
-        @keyframes rotate-ring { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .avatar-float { animation: float 4s ease-in-out infinite; }
+        .cyber-button {
+            clip-path: polygon(15% 0, 100% 0, 100% 70%, 85% 100%, 0 100%, 0 30%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
 
-        .custom-scroll::-webkit-scrollbar { width: 0px; }
+        .cyber-button:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+        }
+
+        .cyber-button:active { transform: scale(0.95); }
+
+        .progress-glow {
+            box-shadow: 0 0 15px var(--cyan);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 10px; }
+
+        /* --- AUDIO VISUALIZER --- */
+        .vis-bar { width: 4px; background: var(--violet); border-radius: 2px; }
+        @keyframes vis-anim { 
+            0% { height: 4px; } 50% { height: 20px; } 100% { height: 8px; } 
+        }
+        .vis-active { animation: vis-anim 0.6s infinite ease-in-out; }
+
+        /* --- GLITCH EFFECT --- */
+        .glitch-text:hover {
+            animation: glitch 0.3s infinite;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 red, -2px 0 blue; }
+            50% { text-shadow: -2px 0 red, 2px 0 blue; }
+            100% { text-shadow: 2px 0 red, -2px 0 blue; }
+        }
     </style>
 </head>
 <body>
-    <div class="cyber-grid"></div>
+    <div class="grid-bg"></div>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        /**
+         * FITNESS QUEST OMNI V11
+         * Un système complet de RPG Fitness en une seule page.
+         */
+
+        const { useState, useEffect, useMemo, useRef } = React;
         const { motion, AnimatePresence } = window.Motion;
 
-        const RANK_NAMES = [
-            "NOBODY", "SCRAP", "WANDERER", "NOMAD", "STREET-RAT", "GLITCHER", "COBALT",
-            "REBEL", "CYPHER", "HACKER", "PHANTOM", "ENFORCER", "SENTINEL", "SPECTRE",
-            "TITAN", "APEX", "ZENITH", "OVERLORD", "NEXUS-GOD", "ULTRAMAN"
+        // --- DATABASE CONSTANTS ---
+        const EXERCISE_MATRIX = {
+            PULL: ["Australiennes", "Négatives", "Chin-ups", "Classiques", "Large Grip", "Lestées"],
+            PUSH: ["Pompes Genoux", "Inclinaison", "Classiques", "Diamant", "Archer", "Pseudo-Planche"],
+            DIPS: ["Dips Chaise", "Dips Banc", "Dips Négatifs", "Dips Barres", "Dips Profonds", "Dips Lestés"],
+            LEGS: ["Squat", "Fentes", "Fentes Bulgares", "Side Squat", "Jump Squat", "Pistol Squat"]
+        };
+
+        const SHOP_ITEMS = [
+            { id: 's1', name: "SÉRUM XP", desc: "+20% Gains XP", price: 1500, type: 'buff' },
+            { id: 's2', name: "CORE RECHARGE", desc: "Reset cycle repos", price: 5000, type: 'action' },
+            { id: 's3', name: "SKIN CYBER-BLUE", desc: "Cosmétique HUD", price: 10000, type: 'skin' },
+            { id: 's4', name: "STÉROÏDE Trophée", desc: "Multiplicateur x2", price: 3500, type: 'buff' }
+        ];
+
+        const INITIAL_BOUNTIES = [
+            { id: 'q1', title: "ENDURANCE ALPHA", goal: "Planche 3 min", reward: 800 },
+            { id: 'q2', title: "STRIKE FORCE", goal: "100 Pompes totales", reward: 1200 },
+            { id: 'q3', title: "SPRINTER", goal: "200 Jumping Jacks", reward: 600 },
+            { id: 'q4', title: "ZENITH", goal: "15 min Étirements", reward: 400 },
+            { id: 'q5', title: "TITAN LEGS", goal: "50 Squats Sautés", reward: 1500 }
         ];
 
         const App = () => {
-            const [tab, setTab] = useState('train');
-            const [completed, setCompleted] = useState({});
-            const [loading, setLoading] = useState(true);
+            // --- CORE STATE ---
+            const [view, setView] = useState('train');
+            const [isLoading, setIsLoading] = useState(true);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [tasks, setTasks] = useState({});
+            const [completedQuests, setCompletedQuests] = useState([]);
+            const audioRef = useRef(null);
 
-            const [state, setState] = useState(() => {
-                const saved = localStorage.getItem('FQ_PROD_V5');
-                return saved ? JSON.parse(saved) : { 
-                    user: null, trophies: 0, xp: 0, level: 1, streak: 0, 
-                    dailyWorkouts: 0, lastDate: new Date().toDateString(), cycleDay: 0,
-                    combatPower: 100
+            const [db, setDb] = useState(() => {
+                const saved = localStorage.getItem('FQ_OMNI_V11');
+                const parsed = saved ? JSON.parse(saved) : null;
+                return parsed || {
+                    user: null,
+                    level: 1,
+                    xp: 0,
+                    trophies: 0,
+                    power: 10,
+                    streak: 0,
+                    cycle: 0, // 0 to 6 (7 days)
+                    startDate: Date.now(),
+                    lastDate: new Date().toDateString(),
+                    sessionsToday: 0,
+                    inventory: []
                 };
             });
 
-            // Sauvegarde et gestion du temps (Cycle 7 jours)
+            // --- PERSISTENCE & TIME LOGIC ---
             useEffect(() => {
-                const timer = setTimeout(() => setLoading(false), 1500);
-                localStorage.setItem('FQ_PROD_V5', JSON.stringify(state));
-                
+                const timer = setTimeout(() => setIsLoading(false), 2000);
+                localStorage.setItem('FQ_OMNI_V11', JSON.stringify(db));
+
                 const today = new Date().toDateString();
-                if (state.lastDate !== today) {
-                    const wasActive = state.dailyWorkouts > 0;
-                    setState(s => ({
-                        ...s,
-                        dailyWorkouts: 0,
+                if (db.lastDate !== today) {
+                    setDb(prev => ({
+                        ...prev,
                         lastDate: today,
-                        cycleDay: (s.cycleDay + 1) % 7,
-                        streak: wasActive ? s.streak + 1 : 0
+                        cycle: (prev.cycle + 1) % 7,
+                        sessionsToday: 0,
+                        streak: prev.sessionsToday > 0 ? prev.streak + 1 : 0
                     }));
                 }
                 return () => clearTimeout(timer);
-            }, [state]);
+            }, [db]);
 
-            const currentRank = RANK_NAMES[Math.min(Math.floor(state.level / 3), RANK_NAMES.length - 1)];
-            const isRestDay = state.cycleDay >= 4;
+            // --- COMPUTED STATS ---
+            const stats = useMemo(() => {
+                const months = Math.min(Math.floor((Date.now() - db.startDate) / (1000*60*60*24*30)), 5);
+                const targetReps = 8 + (db.level * 1) + (months * 2);
+                const progressToNextLevel = db.xp;
+                
+                return { months, targetReps, progressToNextLevel };
+            }, [db]);
 
-            const handleQuestToggle = (id) => {
-                setCompleted(prev => ({ ...prev, [id]: !prev[id] }));
+            const currentMissions = [
+                { id: 'm1', cat: "PULL", name: EXERCISE_MATRIX.PULL[stats.months], req: Math.floor(stats.targetReps * 0.8) },
+                { id: 'm2', cat: "PUSH", name: EXERCISE_MATRIX.PUSH[stats.months], req: stats.targetReps },
+                { id: 'm3', cat: "DIPS", name: EXERCISE_MATRIX.DIPS[stats.months], req: Math.floor(stats.targetReps * 0.7) },
+                { id: 'm4', cat: "LEGS", name: EXERCISE_MATRIX.LEGS[stats.months], req: stats.targetReps + 10 },
+                { id: 'm5', cat: "CORE", name: "Gainage Dynamique", req: "90 sec" }
+            ];
+
+            // --- ACTIONS ---
+            const handleTaskToggle = (id) => {
+                setTasks(prev => ({ ...prev, [id]: !prev[id] }));
             };
 
-            const finalizeSession = () => {
-                if (Object.keys(completed).length < 4) return;
+            const finalizeTraining = () => {
+                if (Object.keys(tasks).filter(k => tasks[k]).length < 5) return;
                 
-                const bonus = state.dailyWorkouts === 0 ? 15 : 10;
-                setState(s => {
-                    let newXP = s.xp + 40;
-                    let newLevel = s.level;
-                    if (newXP >= 100) {
-                        newLevel++;
-                        newXP = 0;
-                    }
+                setDb(prev => {
+                    let newXp = prev.xp + 35;
+                    let newLvl = prev.level;
+                    if (newXp >= 100) { newLvl++; newXp = 0; }
                     return {
-                        ...s,
-                        trophies: s.trophies + bonus,
-                        dailyWorkouts: s.dailyWorkouts + 1,
-                        xp: newXP,
-                        level: newLevel,
-                        combatPower: s.combatPower + 7
+                        ...prev,
+                        xp: newXp,
+                        level: newLvl,
+                        trophies: prev.trophies + 250 + (prev.level * 20),
+                        power: prev.power + 5,
+                        sessionsToday: prev.sessionsToday + 1
                     };
                 });
-                setCompleted({});
+                setTasks({});
+                alert("LOGS TRANSMIS AU CORE. RÉCOMPENSES ATTRIBUÉES.");
             };
 
-            if (loading) return (
-                <div className="h-screen flex items-center justify-center bg-black">
-                    <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="font-orbitron text-cyan-400 tracking-[1em]">LOADING_SYSTEM...</motion.div>
+            const buyItem = (item) => {
+                if (db.trophies < item.price) return alert("CRÉDITS INSUFFISANTS");
+                setDb(prev => ({
+                    ...prev,
+                    trophies: prev.trophies - item.price,
+                    inventory: [...prev.inventory, item.id]
+                }));
+                alert(`${item.name} ACQUIS.`);
+            };
+
+            // --- RENDERERS ---
+            if (isLoading) return (
+                <div className="h-screen flex flex-col items-center justify-center bg-[#020205]">
+                    <motion.div 
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: [0.8, 1.1, 1], opacity: 1 }}
+                        className="font-o text-cyan-400 text-xl tracking-[1em] mb-4"
+                    >
+                        OMNI_V11
+                    </motion.div>
+                    <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div 
+                            initial={{ x: "-100%" }}
+                            animate={{ x: "0%" }}
+                            transition={{ duration: 1.5 }}
+                            className="h-full bg-cyan-500"
+                        />
+                    </div>
                 </div>
             );
 
-            if (!state.user) return (
-                <div className="h-screen flex items-center justify-center p-8">
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-card p-10 rounded-3xl w-full max-w-sm text-center">
-                        <h1 className="font-orbitron text-2xl font-black mb-2">IDENTIFICATION</h1>
-                        <p className="text-[9px] text-cyan-500 uppercase tracking-widest mb-10">Protocole d'accès Pilote</p>
-                        <input id="pilotID" type="text" placeholder="ID_UNITÉ" className="w-full bg-white/5 border-b border-cyan-500 p-3 font-orbitron text-white outline-none text-center mb-8 uppercase" />
-                        <button onClick={() => {
-                            const v = document.getElementById('pilotID').value;
-                            if(v) setState(s => ({...s, user: v.toUpperCase()}));
-                        }} className="cyber-btn bg-cyan-500 text-black w-full py-4 font-black text-sm">INITIALISER CORE</button>
+            if (!db.user) return (
+                <div className="h-screen flex items-center justify-center p-6">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-10 rounded-[40px] w-full max-w-sm border-t-4 border-cyan-500">
+                        <h1 className="font-o text-2xl mb-2 tracking-tighter">PILOT_ID</h1>
+                        <p className="text-[10px] text-gray-500 uppercase mb-8 tracking-widest">Enregistrement dans la base de données</p>
+                        <input 
+                            id="username-input"
+                            type="text" 
+                            placeholder="ENTRER NOM..." 
+                            className="w-full bg-cyan-500/5 border-b-2 border-cyan-500/30 p-4 font-o text-white mb-10 outline-none focus:border-cyan-500 transition-all"
+                        />
+                        <button 
+                            onClick={() => {
+                                const val = document.getElementById('username-input').value;
+                                if(val) setDb(prev => ({ ...prev, user: val.toUpperCase() }));
+                            }}
+                            className="cyber-button bg-cyan-500 text-black w-full py-5 font-black text-xs tracking-widest"
+                        >
+                            INITIALISER
+                        </button>
                     </motion.div>
                 </div>
             );
 
+            const isRestDay = db.cycle >= 5; // Samedi & Dimanche repos
+
             return (
-                <div className="max-w-md mx-auto h-screen flex flex-col relative p-5">
-                    
-                    {/* TOP STATUS */}
-                    <header className="flex justify-between items-start mb-6 glass-card p-5 rounded-2xl border-l-2 border-cyan-500">
+                <div className="max-w-md mx-auto h-screen flex flex-col p-4 relative overflow-hidden">
+                    <audio ref={audioRef} loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" />
+
+                    {/* TOP STATUS BAR */}
+                    <header className="glass-panel p-4 rounded-3xl mb-4 flex justify-between items-center border-l-4 border-cyan-500">
                         <div>
-                            <div className="text-[8px] font-bold text-violet-500 tracking-widest uppercase">{currentRank}</div>
-                            <h2 className="font-orbitron text-xl font-black">{state.user}</h2>
-                            <div className="flex gap-1 mt-1">
-                                {[...Array(7)].map((_, i) => (
-                                    <div key={i} className={`h-1 w-3 rounded-full ${i <= state.cycleDay ? (isRestDay ? 'bg-violet-500' : 'bg-cyan-500') : 'bg-white/10'}`} />
-                                ))}
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                <span className="text-[8px] font-bold text-violet-400 tracking-[0.2em]">SYSTEM_ONLINE</span>
+                            </div>
+                            <h2 className="font-o text-xl font-black glitch-text">{db.user}</h2>
+                            <div className="flex gap-2 mt-1">
+                                <span className="text-[9px] px-2 py-0.5 bg-cyan-500/10 text-cyan-500 rounded font-bold uppercase">LVL {db.level}</span>
+                                <span className="text-[9px] px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded font-bold uppercase">PWR {db.power}</span>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="font-orbitron text-2xl font-black text-cyan-400">{state.trophies}🏆</div>
-                            <div className="text-[9px] text-gray-500 uppercase font-bold tracking-tighter">LVL {state.level}</div>
+                            <div className="font-o text-2xl text-white tracking-tighter">{db.trophies.toLocaleString()}🏆</div>
+                            <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Crédits_Dispo</p>
                         </div>
                     </header>
 
-                    {/* XP SYSTEM */}
-                    <div className="mb-8 px-1">
-                        <div className="flex justify-between text-[8px] font-black text-cyan-500 uppercase mb-1">
-                            <span>Synchro Core</span>
-                            <span>{state.xp}%</span>
+                    {/* RADIO CONTROL */}
+                    <div className="glass-panel px-5 py-3 rounded-2xl mb-4 flex items-center justify-between border-violet-500/20">
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={() => { if(isPlaying) audioRef.current.pause(); else audioRef.current.play(); setIsPlaying(!isPlaying); }} 
+                                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-xl"
+                            >
+                                {isPlaying ? 'Ⅱ' : '▶'}
+                            </button>
+                            <div>
+                                <p className="text-[10px] font-o text-violet-400 tracking-widest">CYBER_STREAM_V3</p>
+                                <p className="text-[8px] text-gray-600 uppercase">Synthwave Collective</p>
+                            </div>
                         </div>
-                        <div className="h-1 w-full bg-gray-900 rounded-full overflow-hidden">
-                            <motion.div animate={{ width: `${state.xp}%` }} className="h-full bg-gradient-to-r from-cyan-500 to-violet-500" />
+                        <div className="flex gap-1 items-end h-5">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className={`vis-bar ${isPlaying ? 'vis-active' : ''}`} style={{ animationDelay: `${i*0.1}s` }} />
+                            ))}
                         </div>
                     </div>
 
-                    {/* MAIN CONTENT */}
-                    <main className="flex-1 overflow-y-auto custom-scroll pb-24">
+                    {/* PROGRESS BAR */}
+                    <div className="px-2 mb-6">
+                        <div className="flex justify-between text-[8px] font-black mb-1 text-gray-500 uppercase tracking-widest">
+                            <span>Progression Niveau</span>
+                            <span>{db.xp}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
+                            <motion.div 
+                                animate={{ width: `${db.xp}%` }} 
+                                className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 progress-glow rounded-full" 
+                            />
+                        </div>
+                    </div>
+
+                    {/* MAIN VIEW AREA */}
+                    <main className="flex-1 overflow-y-auto custom-scroll pb-24 px-1">
                         <AnimatePresence mode="wait">
-                            {tab === 'train' ? (
-                                <motion.div key="train" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+                            {view === 'train' && (
+                                <motion.div key="train" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="space-y-3">
                                     {isRestDay ? (
-                                        <div className="glass-card p-10 rounded-3xl text-center border-violet-500/50">
-                                            <div className="text-5xl mb-6 avatar-float">💎</div>
-                                            <h3 className="font-orbitron text-xl text-violet-400 mb-2 uppercase">Récupération_Active</h3>
-                                            <p className="text-xs text-gray-500 mb-8 leading-relaxed">Phase de reconstruction moléculaire. Entraînement suspendu. Profite de ce repos pour stabiliser tes circuits.</p>
-                                            <div className="p-4 bg-violet-500/10 rounded-xl border border-violet-500/20">
-                                                <p className="text-[10px] text-violet-300 uppercase font-black">Bonus de Prochain Cycle</p>
-                                                <p className="text-lg font-orbitron">+25% Power Gain</p>
-                                            </div>
-                                        </div>
-                                    ) : state.dailyWorkouts >= 2 ? (
-                                        <div className="glass-card p-12 rounded-3xl text-center border-pink-500/50">
-                                            <div className="text-4xl mb-4">🔒</div>
-                                            <p className="font-orbitron text-pink-500 uppercase text-sm">Quota Journalier Atteint</p>
-                                            <p className="text-[9px] text-gray-600 mt-2 uppercase tracking-widest">Réinitialisation à Minuit</p>
+                                        <div className="glass-panel p-12 rounded-[40px] text-center border-violet-500/30">
+                                            <div className="text-6xl mb-6 grayscale opacity-50">🔋</div>
+                                            <h3 className="font-o text-xl text-violet-400 mb-2 tracking-widest">CORE_REFILL</h3>
+                                            <p className="text-xs text-gray-500 leading-relaxed uppercase tracking-tighter">Système en maintenance. Tes tissus musculaires se régénèrent. Retour opérationnel dans {7 - db.cycle} jours.</p>
                                         </div>
                                     ) : (
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center px-2 mb-4">
-                                                <p className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">// Mission Jour {state.cycleDay+1}</p>
-                                                <p className="text-[9px] text-gray-500 uppercase">Sess. {state.dailyWorkouts+1}/2</p>
+                                        <>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h3 className="text-[10px] font-black text-cyan-500 tracking-[0.3em] uppercase underline decoration-2 underline-offset-8 decoration-cyan-500/30">Missions_Quotidiennes</h3>
+                                                <span className="text-[9px] text-gray-500 font-o">CYCLE_{db.cycle + 1}/7</span>
                                             </div>
-                                            {[1, 2, 3, 4].map(i => (
-                                                <div key={i} onClick={() => handleQuestToggle(i)} className={`glass-card p-5 rounded-xl flex justify-between items-center border-l-2 transition-all cursor-pointer ${completed[i] ? 'border-white bg-white/5 opacity-100' : 'border-cyan-500/50 opacity-40'}`}>
-                                                    <div className="flex items-center gap-4">
-                                                        <span className="font-orbitron text-xs text-cyan-400">0{i}</span>
-                                                        <span className="font-orbitron text-sm uppercase tracking-tighter">PROTOCOLE_ACTION_{i}</span>
+                                            {currentMissions.map(m => (
+                                                <div 
+                                                    key={m.id} 
+                                                    onClick={() => handleTaskToggle(m.id)}
+                                                    className={`glass-panel p-5 rounded-2xl flex justify-between items-center transition-all cursor-pointer ${tasks[m.id] ? 'bg-cyan-500/10 border-cyan-500/50' : 'opacity-60 border-white/5'}`}
+                                                >
+                                                    <div>
+                                                        <div className="text-[7px] font-black text-violet-500 uppercase mb-1">{m.cat}</div>
+                                                        <div className="font-o text-sm tracking-tight">{m.name}</div>
+                                                        <div className="text-[10px] text-gray-500 mt-1 uppercase">Objectif: <span className="text-white">{m.req} REPS</span></div>
                                                     </div>
-                                                    <div className={`w-5 h-5 border flex items-center justify-center ${completed[i] ? 'bg-cyan-400 border-white' : 'border-cyan-500'}`}>
-                                                        {completed[i] && <span className="text-[10px] text-black font-black">✓</span>}
+                                                    <div className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all ${tasks[m.id] ? 'bg-cyan-500 border-white rotate-12 scale-110 shadow-[0_0_15px_#00f3ff]' : 'border-white/10'}`}>
+                                                        {tasks[m.id] && <span className="text-black font-black">✓</span>}
                                                     </div>
                                                 </div>
                                             ))}
-                                            <button onClick={finalizeSession} className={`w-full py-5 mt-4 cyber-btn font-black tracking-[0.2em] text-sm ${Object.keys(completed).length === 4 ? 'bg-white text-black' : 'bg-white/5 text-white/10 pointer-events-none'}`}>
-                                                TRANSMETTRE_LOGS
+                                            <button 
+                                                onClick={finalizeTraining}
+                                                className={`w-full py-6 mt-4 cyber-button font-black tracking-[0.5em] text-[10px] ${Object.keys(tasks).length >= 5 ? 'bg-white text-black' : 'bg-white/5 text-gray-600 pointer-events-none'}`}
+                                            >
+                                                TERMINER_LA_SESSION
                                             </button>
-                                        </div>
+                                        </>
                                     )}
                                 </motion.div>
-                            ) : (
-                                <motion.div key="profile" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="text-center">
-                                    <div className="glass-card p-8 rounded-3xl mb-6 relative overflow-hidden">
-                                        <div className="avatar-container mb-6">
-                                            <div className="avatar-ring" style={{ borderColor: isRestDay ? 'var(--violet)' : 'var(--cyan)' }}></div>
-                                            <svg viewBox="0 0 100 100" className="avatar-float w-full h-full p-4">
-                                                <path d="M30 40 Q30 20 50 20 Q70 20 70 40 L75 75 Q50 85 25 75 Z" fill="#080810" stroke={isRestDay ? "#bc13fe" : "#00f3ff"} strokeWidth="2" />
-                                                <rect x="30" y="42" width="40" height="10" fill={isRestDay ? "#bc13fe" : "#00f3ff"} opacity="0.5" />
-                                                <path d="M45 70 L55 70" stroke="white" strokeWidth="1" opacity="0.3" />
-                                            </svg>
+                            )}
+
+                            {view === 'quests' && (
+                                <motion.div key="quests" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                                    <h3 className="text-[10px] font-black text-violet-400 tracking-[0.3em] uppercase mb-4 px-2">// CONTRATS_DE_PRIME</h3>
+                                    {INITIAL_BOUNTIES.map(q => (
+                                        <div key={q.id} className={`glass-panel p-5 rounded-2xl flex justify-between items-center border-dashed ${completedQuests.includes(q.id) ? 'opacity-30' : 'border-violet-500/30'}`}>
+                                            <div>
+                                                <h4 className="font-o text-xs text-white mb-1 uppercase tracking-tighter">{q.title}</h4>
+                                                <p className="text-[10px] text-gray-500 mb-3 uppercase font-bold">{q.goal}</p>
+                                                <div className="text-[9px] text-cyan-400 font-black tracking-widest">RÉCOMPENSE: +{q.reward}🏆</div>
+                                            </div>
+                                            {!completedQuests.includes(q.id) && (
+                                                <button 
+                                                    onClick={() => {
+                                                        setDb(prev => ({ ...prev, trophies: prev.trophies + q.reward, xp: Math.min(prev.xp + 5, 100) }));
+                                                        setCompletedQuests([...completedQuests, q.id]);
+                                                    }}
+                                                    className="px-4 py-2 bg-violet-600 text-[8px] font-o rounded-lg hover:bg-violet-500 transition-colors"
+                                                >
+                                                    VALIDER
+                                                </button>
+                                            )}
                                         </div>
-                                        <h3 className="font-orbitron text-2xl font-black mb-1 tracking-tighter">{state.user}</h3>
-                                        <p className="text-violet-500 text-[10px] font-bold uppercase tracking-widest mb-6">{currentRank}</p>
+                                    ))}
+                                </motion.div>
+                            )}
+
+                            {view === 'shop' && (
+                                <motion.div key="shop" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="grid grid-cols-2 gap-3">
+                                    <div className="col-span-2 text-[10px] font-black text-pink-500 tracking-[0.3em] uppercase mb-2 px-2">// MARCHÉ_NOIR_CYBER</div>
+                                    {SHOP_ITEMS.map(item => (
+                                        <div key={item.id} className="glass-panel p-4 rounded-2xl border-pink-500/20 flex flex-col justify-between">
+                                            <div>
+                                                <div className="text-[7px] text-pink-500 font-black uppercase mb-1">{item.type}</div>
+                                                <h4 className="font-o text-[10px] text-white leading-tight mb-1">{item.name}</h4>
+                                                <p className="text-[9px] text-gray-500 mb-4 font-bold">{item.desc}</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => buyItem(item)}
+                                                className="w-full py-2 bg-pink-500/10 border border-pink-500 text-pink-500 text-[9px] font-o rounded-lg hover:bg-pink-500 hover:text-white transition-all"
+                                            >
+                                                {item.price}🏆
+                                            </button>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+
+                            {view === 'stats' && (
+                                <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                                    <div className="glass-panel p-8 rounded-[40px] text-center">
+                                        <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-tr from-cyan-500/20 to-violet-500/20 rounded-full flex items-center justify-center border border-white/5 relative">
+                                            <span className="text-4xl">👤</span>
+                                            <div className="absolute -bottom-2 bg-cyan-500 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase">LVL_{db.level}</div>
+                                        </div>
+                                        <h3 className="font-o text-xl text-white mb-2">{db.user}</h3>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-8">Opérateur_Cali_Actif</p>
                                         
-                                        <div className="grid grid-cols-2 gap-3 mt-4">
-                                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                                <p className="text-[8px] text-gray-500 uppercase mb-1">Combat Power</p>
-                                                <p className="font-orbitron text-xl text-pink-500">{state.combatPower}</p>
+                                        <div className="grid grid-cols-2 gap-4 text-left">
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Total_Power</div>
+                                                <div className="font-o text-lg text-cyan-400">{db.power}</div>
                                             </div>
-                                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                                <p className="text-[8px] text-gray-500 uppercase mb-1">Série</p>
-                                                <p className="font-orbitron text-xl text-cyan-400">{state.streak}j</p>
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Streak_Jour</div>
+                                                <div className="font-o text-lg text-violet-400">{db.streak}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Service_Mois</div>
+                                                <div className="font-o text-lg text-white">0{stats.months + 1}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Sessions_Day</div>
+                                                <div className="font-o text-lg text-white">{db.sessionsToday}</div>
                                             </div>
                                         </div>
+
+                                        <button 
+                                            onClick={() => { if(confirm("WIPE DATA?")) { localStorage.clear(); location.reload(); }}}
+                                            className="mt-10 opacity-20 text-[8px] font-black tracking-[0.5em] hover:opacity-100 transition-opacity uppercase"
+                                        >
+                                            [ RÉINITIALISER_SYSTÈME ]
+                                        </button>
                                     </div>
-                                    <button onClick={() => alert("Marketplace hors ligne")} className="w-full glass-card p-4 rounded-xl text-white/40 font-orbitron text-[10px] flex items-center justify-between px-6 border-dashed border-white/20">
-                                        <span>🛒 MARKETPLACE</span>
-                                        <span className="text-[8px] bg-white/10 px-2 py-1 rounded">LOCKED</span>
-                                    </button>
-                                    <button onClick={() => {if(confirm("WIPE DATA?")) {localStorage.clear(); location.reload();}}} className="mt-10 text-[9px] opacity-20 uppercase tracking-[0.4em] hover:opacity-100 transition-opacity">Hard_System_Reset</button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </main>
 
-                    {/* NAVIGATION */}
-                    <nav className="fixed bottom-6 left-6 right-6 h-20 glass-card rounded-2xl flex items-center justify-around z-50 border-cyan-500/30">
-                        <button onClick={() => setTab('train')} className={`flex flex-col items-center gap-1 transition-all ${tab === 'train' ? 'text-cyan-400 scale-110 drop-shadow-[0_0_10px_#00f3ff]' : 'opacity-30'}`}>
-                            <span className="text-2xl">{isRestDay ? '💎' : '⚡'}</span>
-                            <span className="text-[9px] font-black uppercase tracking-tighter">Mission</span>
-                        </button>
-                        <div className="w-px h-8 bg-white/10" />
-                        <button onClick={() => setTab('profile')} className={`flex flex-col items-center gap-1 transition-all ${tab === 'profile' ? 'text-violet-400 scale-110 drop-shadow-[0_0_10px_#bc13fe]' : 'opacity-30'}`}>
-                            <span className="text-2xl">👤</span>
-                            <span className="text-[9px] font-black uppercase tracking-tighter">Core</span>
-                        </button>
+                    {/* DOCK NAVIGATION */}
+                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass-panel rounded-full p-2 flex gap-1 z-50 shadow-[0_10px_40px_rgba(0,0,0,0.8)] border-t-2 border-white/10">
+                        {['train', 'quests', 'shop', 'stats'].map(t => (
+                            <button 
+                                key={t} 
+                                onClick={() => setView(t)}
+                                className={`flex-1 py-3 rounded-full font-o text-[9px] tracking-widest transition-all ${view === t ? 'bg-cyan-500 text-black shadow-[0_0_20px_#00f3ff]' : 'text-gray-500 hover:text-white'}`}
+                            >
+                                {t.toUpperCase()}
+                            </button>
+                        ))}
                     </nav>
-
                 </div>
             );
         };
