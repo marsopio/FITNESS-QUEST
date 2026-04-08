@@ -45,11 +45,44 @@
 
         const LEVEL_NAMES = ["WELCOME", "INITIÉ", "RECRUE", "CADET", "ASPIRANT", "SOLDAT", "SENTINELLE", "GARDIEN", "ÉCLAIREUR", "ROVER", "COBALT", "CYBER-NEURONE", "FRAGMENT", "DATA-MAN", "CODE-RUNNER", "TECHNO-SCAN", "BIT-WARRIOR", "CIRCUIT", "SILICIUM", "PROCESSEUR", "AUGMENTÉ", "CYBORG", "HYBRIDE", "VANGUARD", "STALKER", "PULSE", "VECTOR", "RAZOR", "BLADE", "SABRE", "STRIKER", "COMMANDO", "RANGER", "HUNTER", "ASSASSIN", "PHANTOM", "GHOST", "SHADOW", "NIGHT-FALL", "VOID", "ORBITAL", "ASTRO", "NEBULA", "SUPERNOVA", "QUASAR", "PULSAR", "COSMOS", "GALAXY", "TITAN", "ATLAS", "HERCULE", "SPARTIATE", "SAMOURAÏ", "RONIN", "SHOGUN", "DAIMYO", "EMPEREUR", "DRAGON", "PHOENIX", "CHIMÈRE", "OVERDRIVE", "TURBO", "NITRO", "VULCAIN", "PROMETHEE", "ICARE", "ZEUS", "ARES", "HADÈS", "OLYMPE", "CYBER-LORD", "ARCHITECTE", "MAIN-FRAME", "CORE-SYSTEM", "KERNEL", "ROOT", "ADMIN", "OVERSEER", "ORACLE", "MONOLITHE", "ÉTERNEL", "INFINI", "IMMORTEL", "DIVIN", "CELESTE", "ANCIEN", "MYTHIQUE", "TRANSCENDANT", "ECLIPSE", "ZENITH", "APEX", "OMEGA", "ALPHA", "SUPRÊME", "ABSOLU", "DOMINATEUR", "LÉGENDE", "MYTHE", "DIEU-SOLEIL", "ULTRAMAN"];
 
-        const App = () => {
-            const [loading, setLoading] = useState(true);
-            const [tab, setTab] = useState('train');
-            const [completed, setCompleted] = useState({});
-            const [sideQuest, setSideQuest] = useState(null);
+      
+const AudioController = () => {
+const [isPlaying, setlsPlaying] = React.useState(false);
+const audioRef = React.useRef(new Audio('music.mp3'));
+React.useEffect(() => {
+const audio = audioRef.current;
+audio.loop = true; audio.volume = 0.4; return () => audio.pause(); }, []);
+const togglePlay = () => {
+if (isPlaying) {
+audioRef.current.pause();
+} else {
+audioRef.current.play().catch(err => console.log("Clic requis pour l'audio"));
+}
+setlsPlaying(!isPlaying);
+};
+return (
+<button onClick={togglePlay} className="w-10 h-10 glass rounded-full flex
+items-center justify-center border border-cyan-500/30">
+<span>{isPlaying?'': ''}</span>
+</button>
+);
+};
+const App = () => {
+const [tab, setTab] = useState('train');
+const [completed, setCompleted] = useState({});
+const [gameState, setGameState] = useState(() => {
+const saved = localStorage.getItem('FQ_V9_PWA');
+return saved? JSON.parse(saved): {
+user: null, trophies: 0, streak: 0, xp: 0, level: 1, restUntil: null
+};
+});
+return (
+<div className="max-w-md mx-auto h-screen flex flex-col p-5 overflow-hidden">
+<header className="glass p-4 rounded-2xl border-b-2 border-cyan-500 mb-6 flex
+justify-between items-center">
+<div>
+<h2 className="font-orbitron text-lg text-white">{gameState.user ||
+"RECRUE"}</h2>
             
             const [gameState, setGameState] = useState(() => {
                 const saved = localStorage.getItem('FQ_V9_PWA');
