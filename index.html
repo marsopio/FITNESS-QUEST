@@ -3,157 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FITNESS QUEST - OVERDRIVE</title>
+    <title>FITNESS QUEST - PROTO-LAB V4.5</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root { 
-            --cyan: #00f3ff; --pink: #ff0055; --violet: #bc13fe; --dark: #050508;
-            --neon-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+            --cyan: #00f3ff; --pink: #ff0055; --violet: #bc13fe; --dark: #020205; 
+            --neon-glow: 0 0 15px rgba(0, 243, 255, 0.4);
         }
-        body { background: var(--dark); color: white; font-family: 'Rajdhani', sans-serif; overflow: hidden; height: 100vh; }
+
+        body { 
+            background: var(--dark); color: white; font-family: 'Rajdhani', sans-serif; 
+            overflow: hidden; height: 100vh; margin: 0;
+        }
+
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass-card { background: rgba(15, 15, 25, 0.85); backdrop-filter: blur(10px); border: 1px solid var(--cyan); box-shadow: var(--neon-shadow); }
-        .cyber-btn { clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); transition: 0.2s; font-weight: 900; }
-        .cyber-btn:active { transform: scale(0.95); }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--violet)); box-shadow: 0 0 15px var(--cyan); transition: width 1s ease; }
-        
-        /* Animation Avatar */
+
+        /* Background FX */
+        body::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 100; background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+
+        .cyber-grid {
+            position: fixed; inset: 0; z-index: -1;
+            background-image: linear-gradient(var(--cyan) 1px, transparent 1px), 
+                              linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
+            background-size: 40px 40px; opacity: 0.03;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px);
+            animation: grid-move 15s linear infinite;
+        }
+        @keyframes grid-move { from { background-position: 0 0; } to { background-position: 0 40px; } }
+
+        .glass-card { 
+            background: rgba(8, 8, 16, 0.92); backdrop-filter: blur(10px); 
+            border: 1px solid rgba(0, 243, 255, 0.2); box-shadow: var(--neon-glow);
+        }
+
+        .cyber-btn {
+            clip-path: polygon(8% 0, 100% 0, 100% 75%, 92% 100%, 0 100%, 0 25%);
+            transition: all 0.2s ease;
+        }
+        .cyber-btn:active { transform: scale(0.96); filter: brightness(1.2); }
+
+        .debug-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: monospace; font-size: 9px;
+        }
+
+        .avatar-container { position: relative; width: 140px; height: 140px; margin: auto; }
+        .avatar-ring {
+            position: absolute; inset: 0; border: 1px solid var(--violet);
+            border-radius: 50%; animation: rotate-ring 12s linear infinite; opacity: 0.4;
+        }
+        @keyframes rotate-ring { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         .avatar-float { animation: float 4s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        ::-webkit-scrollbar { width: 0px; }
     </style>
 </head>
 <body>
+    <div class="cyber-grid"></div>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
 
-        const RANK_NAMES = ["NOBODY", "DUST", "GLITCH", "SCRAP", "WANDERER", "NOMAD", "RUNNER", "HACKER", "PHANTOM", "TITAN", "ULTRAMAN"]; // Liste courte pour l'exemple
-
-        // --- COMPOSANT AVATAR STYLE ---
-        const CyberAvatar = () => (
-            <div className="w-32 h-32 mx-auto relative avatar-float">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {/* Visage / Casque */}
-                    <path d="M25 40 Q25 20 50 20 Q75 20 75 40 L75 70 Q75 85 50 85 Q25 85 25 70 Z" fill="#1a1a2e" stroke="#bc13fe" strokeWidth="2" />
-                    {/* Lunettes de soleil Cyber */}
-                    <rect x="25" y="40" width="50" height="12" fill="#00f3ff" className="opacity-80" />
-                    <rect x="25" y="40" width="50" height="2" fill="white" />
-                    {/* Éclats Néon */}
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#00f3ff" strokeWidth="0.5" strokeDasharray="5,5" />
-                </svg>
-            </div>
-        );
+        const RANK_NAMES = [
+            "NOBODY", "SCRAP", "WANDERER", "NOMAD", "STREET-RAT", "GLITCHER", "COBALT",
+            "REBEL", "CYPHER", "HACKER", "PHANTOM", "ENFORCER", "SENTINEL", "SPECTRE",
+            "TITAN", "APEX", "ZENITH", "OVERLORD", "NEXUS-GOD", "ULTRAMAN"
+        ];
 
         const App = () => {
             const [tab, setTab] = useState('train');
             const [completed, setCompleted] = useState({});
+            const [debugMode, setDebugMode] = useState(true);
+
             const [state, setState] = useState(() => {
-                const saved = localStorage.getItem('FQ_V3_FINAL');
-                return saved ? JSON.parse(saved) : { user: null, trophies: 0, xp: 0, level: 1, streak: 0, dailyWorkouts: 0, lastDate: null };
+                const saved = localStorage.getItem('FQ_PROTO_V45');
+                return saved ? JSON.parse(saved) : { 
+                    user: null, trophies: 0, xp: 0, level: 1, streak: 0, 
+                    dailyWorkouts: 0, lastDate: new Date().toDateString(), cycleDay: 0,
+                    combatPower: 100
+                };
             });
 
             useEffect(() => {
-                localStorage.setItem('FQ_V3_FINAL', JSON.stringify(state));
-                const today = new Date().toDateString();
-                if (state.lastDate !== today) {
-                    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-                    const newStreak = (state.lastDate === yesterday.toDateString()) ? state.streak : 0;
-                    setState(s => ({ ...s, dailyWorkouts: 0, streak: newStreak, lastDate: today }));
-                }
+                localStorage.setItem('FQ_PROTO_V45', JSON.stringify(state));
             }, [state]);
 
+            // --- FONCTIONS DE DEBUG ---
+            const debugSkipDay = () => {
+                setState(s => ({ ...s, cycleDay: (s.cycleDay + 1) % 7, dailyWorkouts: 0 }));
+            };
+            const debugResetQuota = () => setState(s => ({ ...s, dailyWorkouts: 0 }));
+            const debugAddTrophies = () => setState(s => ({ ...s, trophies: s.trophies + 500, level: s.level + 2 }));
+
+            const isRestDay = state.cycleDay >= 4;
+            const currentRank = RANK_NAMES[Math.min(Math.floor(state.level / 3), RANK_NAMES.length - 1)];
+
             const handleFinalize = () => {
-                const reward = state.dailyWorkouts === 0 ? 15 : 10;
+                const isFirst = state.dailyWorkouts === 0;
+                const reward = isFirst ? 15 : 10;
+                
                 setState(s => ({
                     ...s,
                     trophies: s.trophies + reward,
                     dailyWorkouts: s.dailyWorkouts + 1,
-                    streak: s.dailyWorkouts === 0 ? s.streak + 1 : s.streak
+                    xp: s.xp + 40,
+                    combatPower: s.combatPower + 8,
+                    streak: isFirst ? s.streak + 1 : s.streak
                 }));
+
+                if (state.xp >= 100) {
+                    setState(s => ({ ...s, level: s.level + 1, xp: 0 }));
+                }
                 setCompleted({});
             };
 
             if (!state.user) return (
                 <div className="h-screen flex items-center justify-center p-8 bg-black">
-                    <div className="glass-card p-8 rounded-3xl w-full max-w-sm text-center">
-                        <h1 className="font-orbitron text-2xl font-black text-cyan-400 mb-6">NEW PILOT DETECTED</h1>
-                        <input id="un" type="text" placeholder="ID" className="w-full bg-transparent border-b-2 border-cyan-500 p-2 text-center mb-8 outline-none font-orbitron" />
-                        <button onClick={() => {const v = document.getElementById('un').value; if(v) setState(s=>({...s, user:v.toUpperCase()}))}} className="cyber-btn bg-cyan-500 text-black w-full py-4">ACTIVER</button>
-                    </div>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-10 rounded-3xl w-full max-w-sm text-center">
+                        <h1 className="font-orbitron text-2xl font-black text-cyan-400 mb-2">INITIALISATION</h1>
+                        <p className="text-[9px] text-gray-500 uppercase tracking-[0.4em] mb-10">Prototype Lab Access</p>
+                        <input id="userName" type="text" placeholder="ID_UNITÉ" className="w-full bg-white/5 border-b border-cyan-500 p-3 font-orbitron text-white outline-none text-center mb-8" />
+                        <button onClick={() => {
+                            const val = document.getElementById('userName').value;
+                            if(val) setState(s => ({...s, user: val.toUpperCase()}));
+                        }} className="cyber-btn bg-cyan-500 text-black w-full py-4 font-black">ACTIVER</button>
+                    </motion.div>
                 </div>
             );
 
             return (
-                <div className="max-w-md mx-auto h-screen flex flex-col p-6">
-                    <header className="flex justify-between items-center mb-6 glass-card p-4 rounded-2xl">
-                        <div>
-                            <div className="text-[10px] text-violet-500 font-bold tracking-widest">{RANK_NAMES[state.level-1] || "ELITE"}</div>
-                            <div className="font-orbitron text-lg">{state.user}</div>
+                <div className="max-w-md mx-auto h-screen flex flex-col relative">
+                    
+                    {/* PANNEAU DE DEBUG (UNIQUEMENT POUR TEST) */}
+                    <div className="debug-panel p-2 flex justify-between items-center text-white/50 z-[200]">
+                        <span>[DEBUG_MODE]</span>
+                        <div className="flex gap-2">
+                            <button onClick={debugSkipDay} className="bg-white/10 px-2 py-0.5 rounded hover:bg-white/20">SKIP DAY</button>
+                            <button onClick={debugResetQuota} className="bg-white/10 px-2 py-0.5 rounded hover:bg-white/20">RESET QUOTA</button>
+                            <button onClick={debugAddTrophies} className="bg-white/10 px-2 py-0.5 rounded hover:bg-white/20">+500🏆</button>
                         </div>
-                        <div className="text-right">
-                            <div className="font-orbitron text-xl text-cyan-400">{state.trophies}🏆</div>
-                            <div className="text-[10px] opacity-50 uppercase">Lvl {state.level}</div>
-                        </div>
-                    </header>
-
-                    <div className="flex-1 overflow-y-auto pb-24">
-                        {tab === 'train' ? (
-                            <div className="space-y-4">
-                                {state.dailyWorkouts >= 2 ? (
-                                    <div className="glass-card py-20 rounded-3xl text-center border-pink-500 shadow-pink-500/20">
-                                        <p className="font-orbitron text-pink-500">SYSTEM RECHARGING</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {[1,2,3,4].map(i => (
-                                            <div key={i} onClick={() => setCompleted(c => ({...c, [i]: !c[i]}))} className={`p-5 rounded-xl border-2 transition-all flex justify-between items-center ${completed[i] ? 'border-white bg-white/10' : 'border-cyan-500/50 bg-cyan-500/5'}`}>
-                                                <span className="font-orbitron text-sm">TASK_0{i}</span>
-                                                <div className={`w-4 h-4 border ${completed[i] ? 'bg-cyan-400' : 'border-cyan-500'}`}></div>
-                                            </div>
-                                        ))}
-                                        <button onClick={handleFinalize} className={`w-full py-5 cyber-btn ${Object.keys(completed).length === 4 ? 'bg-white text-black' : 'bg-white/10 text-white/20'}`}>VALIDER SESSION</button>
-                                    </>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="text-center">
-                                <CyberAvatar />
-                                <h3 className="font-orbitron text-xl mt-4 text-cyan-400">{state.user}</h3>
-                                <div className="grid grid-cols-2 gap-4 mt-8">
-                                    <div className="glass-card p-4 rounded-xl">
-                                        <div className="text-[10px] opacity-50 uppercase">Série</div>
-                                        <div className="text-2xl font-orbitron">{state.streak}j</div>
-                                    </div>
-                                    <div className="glass-card p-4 rounded-xl">
-                                        <div className="text-[10px] opacity-50 uppercase">Quota</div>
-                                        <div className="text-2xl font-orbitron">{state.dailyWorkouts}/2</div>
-                                    </div>
-                                </div>
-                                {/* Bouton Boutique Construction */}
-                                <button onClick={() => alert("TERMINAL EN CONSTRUCTION...\nBientôt disponible pour votre unité.")} className="w-full mt-10 p-4 border border-violet-500 text-violet-500 font-orbitron text-xs rounded-xl flex items-center justify-center gap-3 opacity-80 hover:opacity-100">
-                                    <span>🛒</span> SHOP (CONSTRUCTION)
-                                </button>
-                            </div>
-                        )}
                     </div>
 
-                    <nav className="fixed bottom-6 left-6 right-6 h-20 glass-card rounded-2xl flex items-center justify-around z-50">
-                        <button onClick={() => setTab('train')} className={`flex flex-col items-center ${tab === 'train' ? 'text-cyan-400 scale-110' : 'opacity-30'}`}>
-                            <span className="text-2xl">⚡</span>
-                            <span className="text-[9px] font-black mt-1">MISSION</span>
-                        </button>
-                        <button onClick={() => setTab('profile')} className={`flex flex-col items-center ${tab === 'profile' ? 'text-violet-400 scale-110' : 'opacity-30'}`}>
-                            <span className="text-2xl">👤</span>
-                            <span className="text-[9px] font-black mt-1">CORE</span>
-                        </button>
-                    </nav>
+                    <div className="flex-1 flex flex-col p-5 overflow-hidden">
+                        {/* HEADER */}
+                        <header className="flex justify-between items-start mb-6 glass-card p-5 rounded-2xl border-l-2 border-cyan-500">
+                            <div>
+                                <div className="text-[9px] font-bold text-violet-500 tracking-[0.2em] uppercase">{currentRank}</div>
+                                <h2 className="font-orbitron text-xl font-black">{state.user}</h2>
+                            </div>
+                            <div className="text-right">
+                                <div className="font-orbitron text-2xl font-black text-cyan-400">{state.trophies}🏆</div>
+                                <div className="text-[9px] text-gray-500 uppercase font-bold">Jour {state.cycleDay + 1}/7</div>
+                            </div>
+                        </header>
+
+                        {/* XP BAR */}
+                        <div className="mb-8 px-1">
+                            <div className="flex justify-between text-[8px] font-bold text-cyan-500 uppercase mb-1">
+                                <span>Core Sync</span>
+                                <span>{state.xp}%</span>
+                            </div>
+                            <div className="h-1 w-full bg-gray-900 rounded-full overflow-hidden">
+                                <motion.div animate={{ width: `${state.xp}%` }} className="h-full bg-cyan-500 shadow-[0_0_10px_#00f3ff]" />
+                            </div>
+                        </div>
+
+                        {/* CONTENT */}
+                        <main className="flex-1 overflow-y-auto pb-24">
+                            <AnimatePresence mode="wait">
+                                {tab === 'train' ? (
+                                    <motion.div key="train" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+                                        {isRestDay ? (
+                                            /* INTERFACE REPOS */
+                                            <div className="glass-card p-10 rounded-3xl text-center border-violet-500">
+                                                <div className="text-5xl mb-6 avatar-float">💎</div>
+                                                <h3 className="font-orbitron text-xl text-violet-400 mb-2">REST_PROTOCOL_ACTIVE</h3>
+                                                <p className="text-xs text-gray-500 mb-8 leading-relaxed">Phase de reconstruction. Aucun exercice requis. Utilise ce temps pour ta discipline mentale.</p>
+                                                <div className="p-4 bg-violet-500/10 rounded-xl border border-violet-500/20 mb-6">
+                                                    <p className="text-[10px] text-violet-300 uppercase font-black">Bonus de Récupération</p>
+                                                    <p className="text-lg font-orbitron">+20% Power next cycle</p>
+                                                </div>
+                                                <button onClick={() => alert("Méditation enregistrée.")} className="w-full py-4 cyber-btn border border-violet-500 text-violet-400 font-bold uppercase text-[10px] tracking-widest">Valider Repos</button>
+                                            </div>
+                                        ) : state.dailyWorkouts >= 2 ? (
+                                            /* QUOTA ATTEINT */
+                                            <div className="glass-card p-12 rounded-3xl text-center border-pink-500">
+                                                <div className="text-4xl mb-4">🔒</div>
+                                                <p className="font-orbitron text-pink-500 uppercase text-sm">Limite Journalière Atteinte</p>
+                                                <p className="text-[10px] text-gray-600 mt-2">Utilise le bouton DEBUG [SKIP DAY] pour tester demain.</p>
+                                            </div>
+                                        ) : (
+                                            /* EXERCICES */
+                                            <div className="space-y-3">
+                                                <p className="text-[10px] font-black text-cyan-500 uppercase mb-4 tracking-widest px-2">// Mission : Jour {state.cycleDay + 1} // Phase Assaut</p>
+                                                {[1, 2, 3, 4].map(i => (
+                                                    <div key={i} onClick={() => setCompleted(c => ({...c, [i]: !c[i]}))} className={`glass-card p-5 rounded-xl flex justify-between items-center border-l-2 transition-all ${completed[i] ? 'border-white bg-white/5 opacity-100' : 'border-cyan-500/50 opacity-40'}`}>
+                                                        <div className="flex items-center gap-4">
+                                                            <span className="font-orbitron text-xs text-cyan-400">0{i}</span>
+                                                            <span className="font-orbitron text-sm uppercase tracking-tighter">Séquence_Action_{i}</span>
+                                                        </div>
+                                                        <div className={`w-5 h-5 border ${completed[i] ? 'bg-cyan-400 border-white' : 'border-cyan-500'}`}></div>
+                                                    </div>
+                                                ))}
+                                                <button onClick={handleFinalize} className={`w-full py-5 mt-4 cyber-btn font-black tracking-[0.2em] ${Object.keys(completed).length === 4 ? 'bg-white text-black' : 'bg-white/5 text-white/10 pointer-events-none'}`}>
+                                                    TRANSMETTRE_LOGS
+                                                </button>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ) : (
+                                    /* PROFIL */
+                                    <motion.div key="profile" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="text-center">
+                                        <div className="glass-card p-8 rounded-3xl mb-6">
+                                            <div className="avatar-container mb-6">
+                                                <div className="avatar-ring"></div>
+                                                <svg viewBox="0 0 100 100" className="avatar-float w-full h-full">
+                                                    <path d="M30 40 Q30 25 50 25 Q70 25 70 40 L70 70 Q70 80 50 80 Q30 80 30 70 Z" fill="#0c0c1e" stroke={isRestDay ? "#bc13fe" : "#00f3ff"} strokeWidth="2" />
+                                                    <rect x="30" y="42" width="40" height="10" fill={isRestDay ? "#bc13fe" : "#00f3ff"} opacity="0.6" />
+                                                    <rect x="35" y="42" width="5" height="10" fill="white" opacity="0.3" />
+                                                </svg>
+                                            </div>
+                                            <h3 className="font-orbitron text-xl font-black mb-1">{state.user}</h3>
+                                            <p className="text-violet-500 text-[10px] font-bold uppercase tracking-widest">{currentRank}</p>
+                                            
+                                            <div className="grid grid-cols-2 gap-3 mt-8">
+                                                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                                                    <p className="text-[8px] text-gray-500 uppercase">Power Index</p>
+                                                    <p className="font-orbitron text-lg text-pink-500">{state.combatPower}</p>
+                                                </div>
+                                                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                                                    <p className="text-[8px] text-gray-500 uppercase">Série</p>
+                                                    <p className="font-orbitron text-lg text-cyan-400">{state.streak}j</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button onClick={() => alert("Accès refusé. Boutique en maintenance.")} className="w-full glass-card p-4 rounded-xl border-dashed border-white/20 text-white/40 font-orbitron text-[10px] flex items-center justify-between px-6">
+                                            <span>🛒 MARKETPLACE</span>
+                                            <span className="text-[8px] bg-white/10 px-2 py-1 rounded">OFFLINE</span>
+                                        </button>
+
+                                        <button onClick={() => {if(confirm("WIPE?")) {localStorage.clear(); location.reload();}}} className="mt-12 text-[8px] opacity-20 uppercase tracking-[0.5em] hover:opacity-100 transition-opacity">Full_System_Reset</button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </main>
+
+                        {/* NAV */}
+                        <nav className="fixed bottom-6 left-6 right-6 h-16 glass-card rounded-2xl flex items-center justify-around z-50 border-cyan-500/30">
+                            <button onClick={() => setTab('train')} className={`flex flex-col items-center gap-1 transition-all ${tab === 'train' ? 'text-cyan-400 scale-110' : 'opacity-30'}`}>
+                                <span className="text-xl">{isRestDay ? '💎' : '⚡'}</span>
+                                <span className="text-[8px] font-black uppercase">Mission</span>
+                            </button>
+                            <button onClick={() => setTab('profile')} className={`flex flex-col items-center gap-1 transition-all ${tab === 'profile' ? 'text-violet-400 scale-110' : 'opacity-30'}`}>
+                                <span className="text-xl">👤</span>
+                                <span className="text-[8px] font-black uppercase">Core</span>
+                            </button>
+                        </nav>
+                    </div>
                 </div>
             );
         };
