@@ -11,6 +11,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00f3ff">
+    
     <style>
         :root { --neon-cyan: #00f3ff; --neon-pink: #ff0055; --neon-green: #39ff14; }
         body { 
@@ -253,11 +256,13 @@
         root.render(<App />);
 
         // ENREGISTREMENT DU SERVICE WORKER POUR LE HORS-CONNEXION
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail', err));
-            });
-        }
+      if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Système de survie (SW) activé !'))
+            .catch(err => console.log('Échec du SW', err));
+    });
+}
     </script>
 </body>
 </html>
