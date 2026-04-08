@@ -1,16 +1,10 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FITNESS QUEST - OVERDRIVE</title>
     
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon.png">
-    <meta name="theme-color" content="#060608">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -18,22 +12,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --neon-cyan: #00f3ff; --neon-pink: #ff0055; --neon-green: #39ff14; --neon-yellow: #f3ff00; }
-        body { background-color: #060608; color: white; font-family: 'Rajdhani', sans-serif; margin: 0; overflow-x: hidden; background-image: radial-gradient(circle at 50% 20%, #11111d 0%, #060608 100%); min-height: 100vh; }
+        :root { --neon-cyan: #00f3ff; --neon-pink: #ff0055; --neon-green: #39ff14; }
+        body { 
+            background-color: #060608; color: white; font-family: 'Rajdhani', sans-serif; 
+            margin: 0; overflow-x: hidden; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 20%, #11111d 0%, #060608 100%);
+        }
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass { background: rgba(6, 6, 12, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(0, 243, 255, 0.15); }
-        
-        /* Scanline effect */
-        body::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none; }
-        
-        .cyber-grid { position: fixed; inset: 0; background-image: linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px); background-size: 45px 45px; pointer-events: none; z-index: -1; }
-        .tab-active { color: var(--neon-cyan); border-bottom: 3px solid var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan); }
-        
-        @keyframes glitch { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
+        .glass { background: rgba(6, 6, 12, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(0, 243, 255, 0.15); }
+        .cyber-grid { 
+            position: fixed; inset: 0; 
+            background-image: linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px); 
+            background-size: 45px 45px; z-index: -1; 
+        }
+        .progress-bar { height: 6px; background: rgba(0, 243, 255, 0.1); border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); transition: width 0.5s ease; }
+        @keyframes glitch { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 100% { transform: translate(0) } }
         .glitch-hover:hover { animation: glitch 0.3s infinite; }
-        
-        .progress-bar { height: 6px; background: rgba(0, 243, 255, 0.1); border-radius: 10px; overflow: hidden; position: relative; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); box-shadow: 0 0 10px var(--neon-cyan); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body>
@@ -41,48 +37,43 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         const LEVEL_NAMES = ["WELCOME", "INITIÉ", "RECRUE", "CADET", "ASPIRANT", "SOLDAT", "SENTINELLE", "GARDIEN", "ÉCLAIREUR", "ROVER", "COBALT", "CYBER-NEURONE", "FRAGMENT", "DATA-MAN", "CODE-RUNNER", "TECHNO-SCAN", "BIT-WARRIOR", "CIRCUIT", "SILICIUM", "PROCESSEUR", "AUGMENTÉ", "CYBORG", "HYBRIDE", "VANGUARD", "STALKER", "PULSE", "VECTOR", "RAZOR", "BLADE", "SABRE", "STRIKER", "COMMANDO", "RANGER", "HUNTER", "ASSASSIN", "PHANTOM", "GHOST", "SHADOW", "NIGHT-FALL", "VOID", "ORBITAL", "ASTRO", "NEBULA", "SUPERNOVA", "QUASAR", "PULSAR", "COSMOS", "GALAXY", "TITAN", "ATLAS", "HERCULE", "SPARTIATE", "SAMOURAÏ", "RONIN", "SHOGUN", "DAIMYO", "EMPEREUR", "DRAGON", "PHOENIX", "CHIMÈRE", "OVERDRIVE", "TURBO", "NITRO", "VULCAIN", "PROMETHEE", "ICARE", "ZEUS", "ARES", "HADÈS", "OLYMPE", "CYBER-LORD", "ARCHITECTE", "MAIN-FRAME", "CORE-SYSTEM", "KERNEL", "ROOT", "ADMIN", "OVERSEER", "ORACLE", "MONOLITHE", "ÉTERNEL", "INFINI", "IMMORTEL", "DIVIN", "CELESTE", "ANCIEN", "MYTHIQUE", "TRANSCENDANT", "ECLIPSE", "ZENITH", "APEX", "OMEGA", "ALPHA", "SUPRÊME", "ABSOLU", "DOMINATEUR", "LÉGENDE", "MYTHE", "DIEU-SOLEIL", "ULTRAMAN"];
 
-      
-const AudioController = () => {
-const [isPlaying, setlsPlaying] = React.useState(false);
-const audioRef = React.useRef(new Audio('music.mp3'));
-React.useEffect(() => {
-const audio = audioRef.current;
-audio.loop = true; audio.volume = 0.4; return () => audio.pause(); }, []);
-const togglePlay = () => {
-if (isPlaying) {
-audioRef.current.pause();
-} else {
-audioRef.current.play().catch(err => console.log("Clic requis pour l'audio"));
-}
-setlsPlaying(!isPlaying);
-};
-return (
-<button onClick={togglePlay} className="w-10 h-10 glass rounded-full flex
-items-center justify-center border border-cyan-500/30">
-<span>{isPlaying?'': ''}</span>
-</button>
-);
-};
-const App = () => {
-const [tab, setTab] = useState('train');
-const [completed, setCompleted] = useState({});
-const [gameState, setGameState] = useState(() => {
-const saved = localStorage.getItem('FQ_V9_PWA');
-return saved? JSON.parse(saved): {
-user: null, trophies: 0, streak: 0, xp: 0, level: 1, restUntil: null
-};
-});
-return (
-<div className="max-w-md mx-auto h-screen flex flex-col p-5 overflow-hidden">
-<header className="glass p-4 rounded-2xl border-b-2 border-cyan-500 mb-6 flex
-justify-between items-center">
-<div>
-<h2 className="font-orbitron text-lg text-white">{gameState.user ||
-"RECRUE"}</h2>
+        // COMPOSANT AUDIO
+        const AudioController = () => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const audioRef = useRef(new Audio('music.mp3'));
+
+            useEffect(() => {
+                const audio = audioRef.current;
+                audio.loop = true;
+                audio.volume = 0.4;
+                return () => audio.pause();
+            }, []);
+
+            const togglePlay = () => {
+                if (isPlaying) {
+                    audioRef.current.pause();
+                } else {
+                    audioRef.current.play().catch(err => console.log("Interaction utilisateur requise"));
+                }
+                setIsPlaying(!isPlaying);
+            };
+
+            return (
+                <button onClick={togglePlay} className="w-10 h-10 glass rounded-full flex items-center justify-center border border-cyan-500/30 active:scale-90 transition-all">
+                    <span className="text-lg">{isPlaying ? '🔊' : '🔇'}</span>
+                </button>
+            );
+        };
+
+        const App = () => {
+            const [tab, setTab] = useState('train');
+            const [loading, setLoading] = useState(true);
+            const [completed, setCompleted] = useState({});
+            const [sideQuest, setSideQuest] = useState(null);
             
             const [gameState, setGameState] = useState(() => {
                 const saved = localStorage.getItem('FQ_V9_PWA');
@@ -99,13 +90,8 @@ justify-between items-center">
                 const timer = setTimeout(() => {
                     generateQuest();
                     setLoading(false);
-                }, 2500);
-                
-                // Register Service Worker
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('./sw.js')
-                        .catch(err => console.log("SW non enregistré", err));
-                }
+                }, 2000);
+                return () => clearTimeout(timer);
             }, []);
 
             const generateQuest = () => {
@@ -120,55 +106,45 @@ justify-between items-center">
             };
 
             const addXP = (val) => {
-                let nXp = gameState.xp + val;
-                let nLvl = gameState.level;
-                while (nXp >= 100 && nLvl < 100) {
-                    nXp -= 100;
-                    nLvl += 1;
-                    alert(`UPGRADE SYSTEM : NIVEAU ${nLvl} [${LEVEL_NAMES[nLvl-1]}]`);
-                }
-                setGameState(p => ({...p, xp: nXp, level: nLvl}));
-            };
-
-            const hardReset = () => {
-                if(confirm("⚠ PROTOCOLE DE SUPPRESSION : Cette action est irréversible. Effacer ?")) {
-                    localStorage.clear();
-                    window.location.reload();
-                }
+                setGameState(prev => {
+                    let nXp = prev.xp + val;
+                    let nLvl = prev.level;
+                    while (nXp >= 100 && nLvl < 100) {
+                        nXp -= 100;
+                        nLvl += 1;
+                        alert(`UPGRADE SYSTEM : NIVEAU ${nLvl} [${LEVEL_NAMES[nLvl-1]}]`);
+                    }
+                    return { ...prev, xp: nXp, level: nLvl };
+                });
             };
 
             const exercises = useMemo(() => {
                 const t = gameState.trophies;
                 const b = Math.floor(t / 25);
-                const isCali = t >= 2000;
                 return [
-                    { id: 1, n: isCali ? "Pompes Diamant" : "Pompes", r: 15 + b, i: "🦾", c: "var(--neon-cyan)" },
-                    { id: 2, n: t > 1200 ? "Tractions" : (t > 500 ? "Négatives" : "Australiennes"), r: 8 + Math.floor(b/2), i: "⚔️", c: "var(--neon-pink)" },
-                    { id: 3, n: t > 800 ? "Dips Barres" : "Dips Chaise", r: 12 + b, i: "⚖️", c: "var(--neon-purple)" },
-                    { id: 4, n: isCali ? "Squat Jumps" : "Squats", r: 20 + b, i: "🦵", c: "var(--neon-green)" }
+                    { id: 1, n: t > 2000 ? "Pompes Diamant" : "Pompes", r: 15 + b, i: "🦾", c: "#00f3ff" },
+                    { id: 2, n: t > 1200 ? "Tractions" : "Australiennes", r: 8 + Math.floor(b/2), i: "⚔️", c: "#ff0055" },
+                    { id: 3, n: t > 800 ? "Dips Barres" : "Dips Chaise", r: 12 + b, i: "⚖️", c: "#a855f7" },
+                    { id: 4, n: t > 2000 ? "Squat Jumps" : "Squats", r: 20 + b, i: "🦵", c: "#39ff14" }
                 ];
             }, [gameState.trophies]);
 
             if (loading) return (
                 <div className="h-screen flex flex-col items-center justify-center bg-black">
-                    <div className="relative w-24 h-24 mb-8">
-                        <div className="absolute inset-0 border-4 border-cyan-500 rounded-full animate-ping opacity-25"></div>
-                        <div className="absolute inset-0 border-4 border-t-transparent border-cyan-400 rounded-full animate-spin"></div>
-                    </div>
-                    <p className="font-orbitron text-[12px] tracking-[0.8em] text-cyan-400 animate-pulse">OVERDRIVE_OS_BOOTING</p>
+                    <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="font-orbitron text-xs tracking-[0.5em] text-cyan-400 animate-pulse">OS_BOOTING...</p>
                 </div>
             );
 
             if (!gameState.user) return (
-                <div className="h-screen p-8 flex flex-col justify-center animate-fade-in max-w-sm mx-auto">
-                    <h1 className="font-orbitron text-5xl mb-2 italic glitch-hover text-white">FITNESS QUEST</h1>
+                <div className="h-screen p-8 flex flex-col justify-center max-w-sm mx-auto">
+                    <h1 className="font-orbitron text-4xl mb-2 italic text-white">FITNESS QUEST</h1>
                     <div className="h-1 w-20 bg-pink-600 mb-8"></div>
-                    <p className="text-gray-400 text-[11px] tracking-[0.4em] mb-12 uppercase font-bold">Synchronisation ADN requise</p>
-                    <input id="un" type="text" placeholder="NOM_DE_CODE" className="bg-white/5 border border-white/20 p-5 font-orbitron text-white outline-none mb-6 rounded-lg text-lg focus:border-cyan-500 transition-all uppercase" />
+                    <input id="un" type="text" placeholder="NOM_DE_CODE" className="bg-white/5 border border-white/20 p-4 font-orbitron text-white outline-none mb-4 rounded-lg uppercase" />
                     <button onClick={() => {
                         const val = document.getElementById('un').value;
                         if(val) setGameState(p => ({...p, user: val.toUpperCase()}));
-                    }} className="bg-cyan-500 text-black p-5 font-orbitron font-black text-sm tracking-widest rounded-lg hover:bg-white transition-all">INITIALISER L'INTERFACE</button>
+                    }} className="bg-cyan-500 text-black p-4 font-orbitron font-black rounded-lg">INITIALISER</button>
                 </div>
             );
 
@@ -176,119 +152,97 @@ justify-between items-center">
 
             return (
                 <div className="max-w-md mx-auto min-h-screen p-5 pb-32">
-                    <header className="glass p-5 rounded-2xl border-b-2 border-cyan-500 mb-6 flex justify-between items-center shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] text-pink-500 font-black tracking-widest">{LEVEL_NAMES[gameState.level-1]}</span>
-                            <h2 className="font-orbitron text-xl leading-tight text-white">{gameState.user}</h2>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-3xl font-orbitron font-black text-cyan-400 leading-none">{gameState.trophies}🏆</span>
-                            <div className="w-24 mt-2">
-                                <div className="progress-bar"><div className="progress-fill" style={{width: `${gameState.xp}%`}}></div></div>
+                    <header className="glass p-5 rounded-2xl border-b-2 border-cyan-500 mb-6 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <AudioController />
+                            <div>
+                                <span className="text-[10px] text-pink-500 font-black tracking-widest">{LEVEL_NAMES[gameState.level-1]}</span>
+                                <h2 className="font-orbitron text-xl text-white">{gameState.user}</h2>
                             </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-2xl font-orbitron font-black text-cyan-400">{gameState.trophies}🏆</span>
+                            <div className="w-20 progress-bar mt-1"><div className="progress-fill" style={{width: `${gameState.xp}%`}}></div></div>
                         </div>
                     </header>
 
                     <main>
-                        {tab === 'train' && (
+                        {tab === 'train' ? (
                             <div className="space-y-4">
                                 {isRest ? (
                                     <div className="py-20 text-center glass border-green-500 rounded-3xl">
-                                        <div className="text-6xl mb-4 animate-pulse">🔋</div>
-                                        <p className="font-orbitron text-green-400 text-sm tracking-[0.2em] mb-2 uppercase">Système en maintenance</p>
-                                        <p className="text-[10px] text-gray-500 px-10 italic">Récupération des fibres musculaires en cours. Réactivation auto dans 15 heures.</p>
+                                        <div className="text-5xl mb-4">🔋</div>
+                                        <p className="font-orbitron text-green-400 text-sm">MAINTENANCE EN COURS</p>
                                     </div>
                                 ) : (
                                     <>
                                         {sideQuest && (
-                                            <div className="p-5 border border-yellow-500/40 bg-yellow-500/5 rounded-2xl flex justify-between items-center mb-6 relative overflow-hidden group">
-                                                <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500"></div>
+                                            <div className="p-4 border border-yellow-500/40 bg-yellow-500/5 rounded-2xl flex justify-between items-center mb-4">
                                                 <div>
-                                                    <p className="text-[10px] font-black text-yellow-500 uppercase tracking-tighter">DATA-BOOST OPTIONNEL (+30 XP)</p>
-                                                    <p className="font-orbitron text-xl text-white">{sideQuest.reps} {sideQuest.ex}</p>
+                                                    <p className="text-[10px] font-black text-yellow-500">BOOST OPTIONNEL (+30 XP)</p>
+                                                    <p className="font-orbitron text-lg">{sideQuest.reps} {sideQuest.ex}</p>
                                                 </div>
-                                                <button onClick={() => { addXP(30); setSideQuest(null); generateQuest(); }} className="bg-yellow-500 text-black font-black text-[11px] px-5 py-2 rounded-lg glitch-hover">RECU</button>
+                                                <button onClick={() => { addXP(30); setSideQuest(null); }} className="bg-yellow-500 text-black text-[10px] px-4 py-2 rounded font-bold">REÇU</button>
                                             </div>
                                         )}
-
                                         <div className="grid gap-3">
                                             {exercises.map(ex => (
                                                 <div key={ex.id} onClick={() => setCompleted(p => ({...p, [ex.id]: !p[ex.id]}))}
-                                                     className={`p-5 rounded-2xl glass border-l-8 transition-all duration-300 flex justify-between items-center cursor-pointer ${completed[ex.id] ? 'opacity-100 scale-[0.98] border-white bg-white/10' : 'opacity-60 border-opacity-50'}`}
+                                                     className={`p-4 rounded-xl glass border-l-4 transition-all cursor-pointer flex justify-between items-center ${completed[ex.id] ? 'opacity-100 border-white bg-white/10' : 'opacity-60'}`}
                                                      style={{borderLeftColor: ex.c}}>
-                                                    <div className="flex items-center gap-5">
-                                                        <span className="text-4xl" style={{textShadow: `0 0 15px ${ex.c}`}}>{ex.i}</span>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-3xl">{ex.i}</span>
                                                         <div>
-                                                            <p className="text-[10px] uppercase font-bold tracking-widest opacity-70" style={{color: ex.c}}>{ex.n}</p>
-                                                            <p className="text-3xl font-orbitron text-white leading-none">{ex.r}</p>
+                                                            <p className="text-[10px] uppercase font-bold" style={{color: ex.c}}>{ex.n}</p>
+                                                            <p className="text-2xl font-orbitron">{ex.r}</p>
                                                         </div>
                                                     </div>
-                                                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${completed[ex.id] ? 'bg-cyan-500 border-cyan-400' : 'border-white/20'}`}>
-                                                        {completed[ex.id] && <span className="text-black text-xs font-bold">✓</span>}
-                                                    </div>
+                                                    <div className={`w-6 h-6 rounded-full border-2 ${completed[ex.id] ? 'bg-cyan-500' : ''}`}></div>
                                                 </div>
                                             ))}
                                         </div>
-                                        
                                         <button onClick={() => {
-                                            if(Object.keys(completed).length < 4) return alert("SÉQUENCE INCOMPLÈTE : Effectuez tous les exercices.");
+                                            if(Object.keys(completed).length < 4) return alert("SÉQUENCE INCOMPLÈTE");
                                             setGameState(p => ({...p, trophies: p.trophies + 20, streak: p.streak + 1}));
                                             setCompleted({}); addXP(15);
-                                            alert("MISSION TERMINÉE : +20🏆 / +15 XP");
-                                        }} className="w-full py-6 bg-white text-black font-orbitron font-black uppercase text-sm mt-6 rounded-2xl shadow-[0_15px_30px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all">UPLOAD SESSION</button>
+                                            alert("MISSION TERMINÉE !");
+                                        }} className="w-full py-4 bg-white text-black font-orbitron font-black mt-4 rounded-xl">UPLOAD SESSION</button>
                                     </>
                                 )}
                             </div>
-                        )}
-
-                        {tab === 'profile' && (
-                            <div className="space-y-5">
-                                <div className="glass p-8 rounded-3xl flex flex-col items-center relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 text-[10px] text-white/20 font-orbitron uppercase">ID: {Math.random().toString(36).substr(2, 9)}</div>
-                                    <div className="w-24 h-24 rounded-full border-4 border-cyan-500 flex items-center justify-center text-5xl mb-4 shadow-[0_0_30px_rgba(0,243,255,0.4)]">💠</div>
-                                    <h3 className="font-orbitron text-2xl mb-1 text-white text-center">{LEVEL_NAMES[gameState.level-1]}</h3>
-                                    <p className="text-cyan-400 font-bold tracking-[0.3em] text-[12px] uppercase">Grade {gameState.level} / 100</p>
-                                    <div className="w-full mt-6 space-y-1">
-                                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400"><span>XP Niveau</span><span>{gameState.xp}%</span></div>
-                                        <div className="progress-bar"><div className="progress-fill" style={{width: `${gameState.xp}%`}}></div></div>
-                                    </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="glass p-6 rounded-3xl text-center">
+                                    <div className="text-4xl mb-2">💠</div>
+                                    <h3 className="font-orbitron text-xl">{LEVEL_NAMES[gameState.level-1]}</h3>
+                                    <p className="text-cyan-400 text-xs tracking-widest">GRADE {gameState.level} / 100</p>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="glass p-5 rounded-2xl text-center border-b-2 border-pink-500">
-                                        <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Fidélité</p>
-                                        <p className="text-3xl font-orbitron text-white">{gameState.streak} <span className="text-xs text-pink-500">J</span></p>
+                                    <div className="glass p-4 rounded-xl text-center">
+                                        <p className="text-[10px] text-gray-500 uppercase">Série</p>
+                                        <p className="text-2xl font-orbitron">{gameState.streak} J</p>
                                     </div>
-                                    <div className="glass p-5 rounded-2xl text-center border-b-2 border-cyan-500">
-                                        <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Score Total</p>
-                                        <p className="text-3xl font-orbitron text-white">{gameState.trophies}</p>
+                                    <div className="glass p-4 rounded-xl text-center">
+                                        <p className="text-[10px] text-gray-500 uppercase">Score</p>
+                                        <p className="text-2xl font-orbitron">{gameState.trophies}</p>
                                     </div>
                                 </div>
-
                                 <button onClick={() => {
-                                    const confirmRest = confirm("Activer le mode repos ? Vous ne pourrez plus vous entraîner pendant 15 heures.");
-                                    if(confirmRest) setGameState(p => ({...p, restUntil: new Date().getTime() + 15*60*60*1000}));
-                                }}
-                                        disabled={isRest}
-                                        className={`w-full p-5 rounded-2xl border-2 font-orbitron text-[12px] uppercase tracking-widest transition-all ${isRest ? 'border-gray-800 text-gray-700' : 'border-green-500 text-green-500 hover:bg-green-500 hover:text-black'}`}>
-                                    {isRest ? "Repos Actif" : "Entrer en Hibernation"}
-                                </button>
-                                
-                                <button onClick={hardReset} className="w-full p-4 text-red-900 font-orbitron text-[10px] uppercase tracking-[0.4em] mt-8 hover:text-red-500 transition-all opacity-40 hover:opacity-100">
-                                    Formatage complet du noyau
-                                </button>
+                                    if(confirm("Activer hibernation (15h) ?")) 
+                                        setGameState(p => ({...p, restUntil: new Date().getTime() + 15*60*60*1000}));
+                                }} className="w-full p-4 border border-green-500 text-green-500 font-orbitron text-xs rounded-xl">HIBERNATION</button>
                             </div>
                         )}
                     </main>
 
-                    <nav className="fixed bottom-6 left-6 right-6 h-20 glass rounded-[2.5rem] flex items-center justify-around border border-white/10 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-                        <button onClick={() => setTab('train')} className={`flex flex-col items-center gap-1 transition-all duration-300 ${tab === 'train' ? 'text-cyan-400 scale-110' : 'opacity-30'}`}>
-                            <span className="text-2xl italic font-black">⚔</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest">Combat</span>
+                    <nav className="fixed bottom-6 left-6 right-6 h-16 glass rounded-full flex items-center justify-around z-50">
+                        <button onClick={() => setTab('train')} className={`flex flex-col items-center ${tab === 'train' ? 'text-cyan-400' : 'opacity-30'}`}>
+                            <span className="text-xl">⚔</span>
+                            <span className="text-[8px] font-black uppercase">Combat</span>
                         </button>
-                        <button onClick={() => setTab('profile')} className={`flex flex-col items-center gap-1 transition-all duration-300 ${tab === 'profile' ? 'text-cyan-400 scale-110' : 'opacity-30'}`}>
-                            <span className="text-2xl italic font-black">👤</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest">Noyau</span>
+                        <button onClick={() => setTab('profile')} className={`flex flex-col items-center ${tab === 'profile' ? 'text-cyan-400' : 'opacity-30'}`}>
+                            <span className="text-xl">👤</span>
+                            <span className="text-[8px] font-black uppercase">Noyau</span>
                         </button>
                     </nav>
                 </div>
@@ -297,13 +251,13 @@ justify-between items-center">
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-if ('serviceWorker' in navigator) {
-window.addEventListener('load', () => {
-});
-navigator.serviceWorker.register('./sw.js')
-.then(reg => console.log('Système hors-ligne prêt.', reg))
-.catch(err => console.log('Erreur SW:', err));
-}
+
+        // ENREGISTREMENT DU SERVICE WORKER POUR LE HORS-CONNEXION
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail', err));
+            });
+        }
     </script>
 </body>
 </html>
