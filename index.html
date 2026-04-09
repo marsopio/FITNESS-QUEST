@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FITNESS QUEST - OMNI V18</title>
+    <title>FITNESS QUEST - OMNI FINAL V16</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -13,244 +13,420 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --cyan: #00f3ff; --pink: #ff0055; --dark: #030308; }
-        body { background: var(--dark); color: #fff; font-family: 'Rajdhani', sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+        :root { 
+            --cyan: #00f3ff; --pink: #ff0055; --violet: #bc13fe; 
+            --dark-bg: #030308; --glass: rgba(10, 10, 25, 0.96);
+        }
+
+        body { 
+            background: var(--dark-bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
+            overflow: hidden; height: 100vh; margin: 0; user-select: none;
+        }
+
         .font-o { font-family: 'Orbitron', sans-serif; }
-        .grid-bg { position: fixed; inset: 0; z-index: -1; background-image: linear-gradient(rgba(0,243,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,243,255,0.05) 1px, transparent 1px); background-size: 40px 40px; transform: perspective(500px) rotateX(60deg) translateY(-100px); animation: grid-scroll 15s linear infinite; }
+
+        /* --- ARRIÈRE PLAN ANIME --- */
+        .grid-bg {
+            position: fixed; inset: 0; z-index: -1;
+            background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px; transform: perspective(500px) rotateX(60deg) translateY(-100px);
+            animation: grid-scroll 15s linear infinite;
+        }
         @keyframes grid-scroll { from { background-position: 0 0; } to { background-position: 0 40px; } }
-        .glass { background: rgba(10, 10, 25, 0.96); backdrop-filter: blur(20px); border: 1px solid rgba(0, 243, 255, 0.1); }
-        .cyber-btn { clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); }
+
+        /* --- UI COMPONENTS --- */
+        .glass-panel { 
+            background: var(--glass); backdrop-filter: blur(20px); 
+            border: 1px solid rgba(0, 243, 255, 0.1); 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .cyber-button { 
+            clip-path: polygon(8% 0, 100% 0, 100% 75%, 92% 100%, 0 100%, 0 25%); 
+            position: relative; overflow: hidden;
+        }
+        .cyber-button::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .cyber-button:active::after { left: 100%; }
+
+        /* --- VISUALIZER --- */
+        .vis-bar { width: 3px; background: var(--cyan); border-radius: 2px; height: 4px; }
+        .vis-active { animation: bounce 0.6s infinite ease-in-out; }
+        @keyframes bounce { 0%, 100% { height: 4px; } 50% { height: 18px; } }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Effet de scanline rétro */
+        .scanline {
+            width: 100%; height: 2px; background: rgba(0, 243, 255, 0.03);
+            position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none;
+            animation: scan 6s linear infinite;
+        }
+        @keyframes scan { from { top: -10%; } to { top: 110%; } }
     </style>
 </head>
 <body>
     <div class="grid-bg"></div>
+    <div class="scanline"></div>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        /**
+         * FITNESS QUEST - OMNI FINAL V16
+         * Développé pour Chromebook & Mobile
+         */
+        const { useState, useEffect, useMemo, useRef } = React;
         const { motion, AnimatePresence } = window.Motion;
 
-        const RANKS = [
-    // 0 - 9 : Les Inconnus
-    "NOBODY", "GHOST", "OUTSIDER", "CITIZEN", "BYSTANDER", "NEWBIE", "AMATEUR", "ROOKIE", "TRAINEE", "ASPIRANT",
-    
-    // 10 - 19 : Le Réveil
-    "RECRUIT", "INITIATE", "MEMBER", "SCOUT", "RUNNER", "STRIKER", "SOLDIER", "GRUNT", "MILITANT", "OPERATIVE",
-    
-    // 20 - 29 : La Force
-    "WARRIOR", "FIGHTER", "BRAWLER", "CHALLENGER", "CONTENDER", "ATHLETE", "PROSPECT", "TALENT", "ELITE", "VETERAN",
-    
-    // 30 - 39 : Les Cyber-Augmentés
-    "CYBER_UNIT", "TECH_FIGHTER", "NEON_STRIDER", "CORE_PILOT", "LINK_USER", "DATA_WARRIOR", "GRID_RUNNER", "SYSTEM_SCOUT", "CODE_BREAKER", "BIT_CRUSHER",
-    
-    // 40 - 49 : Les Commandants
-    "COMMANDO", "OFFICER", "CAPTAIN", "MAJOR", "COLONEL", "GENERAL", "MARSHAL", "CHIEF", "DIRECTOR", "OVERSEER",
-    
-    // 50 - 59 : L'Elite Omni
-    "ELITE_UNIT", "ALPHA_ONE", "PRIME_SOLDIER", "OMEGA_STRIKER", "TITAN", "COLOSSUS", "GOLIATH", "VANGUARD", "SENTINEL", "GUARDIAN",
-    
-    // 60 - 69 : Les Maîtres du Flux
-    "MASTER", "SENSEI", "SHIHAN", "GRANDMASTER", "SAGE", "PROPHET", "ORACLE", "ARCHITECT", "DESIGNER", "ENGINEER",
-    
-    // 70 - 79 : Les Seigneurs de l'Acier
-    "CYBER_LORD", "NEON_KING", "GRID_MASTER", "SILICON_DUKE", "CHIP_BARON", "DATA_PRINCE", "VOXEL_EMPEROR", "VOID_WALKER", "RIFT_JUMPER", "STAR_GAZER",
-    
-    // 80 - 89 : Les Transcendants
-    "TRANSCENDANT", "ASCENDED", "EVOLVED", "SUPERIOR", "SUPREME", "ULTIMATE", "ABSOLUTE", "ETERNAL", "IMMORTAL", "DEMI_GOD",
-    
-    // 90 - 99 : Le Sommet
-    "GOD_MODE", "CELESTIAL", "GALACTIC", "UNIVERSAL", "MULTIVERSAL", "REALITY_SHAPER", "OMNI_ARCHITECT", "ZENITH", "APEX", "ULTRAMAN"
-];
-        const EXOS = {
-            PUSH: ["Pompes Inclinées", "Pompes Classiques", "Pompes Diamant", "Pompes Archer"],
-            PULL: ["Australiennes", "Négatives", "Pull-ups", "Lestées"],
-            LEGS: ["Squats", "Fentes", "Side Squats", "Pistols"]
+        // --- BASE DE DONNÉES ET CONFIG ---
+        const AVATARS = ["🦾", "🧬", "⚡", "🥷", "🤖", "🔥", "💎", "🌌", "👑", "👽"];
+        
+        const WORKOUT_MODULES = {
+            PUSH: ["Pompes classiques", "Pompes diamant", "Dips", "Archer Pushups"],
+            PULL: ["Tractions australiennes", "Chin-ups", "Pull-ups", "Muscle-up Prep"],
+            LEGS: ["Squats", "Fentes sautées", "Side Squats", "Pistol Squat Prep"],
+            CORE: ["Planche (30s)", "Leg Raises", "Hollow Body", "L-Sit Prep"]
+        };
+
+        const SHOP_ITEMS = [
+            { id: 'itm_1', name: "SÉRUM ALPHA", desc: "+25 XP immédiat", price: 20, type: 'xp' },
+            { id: 'itm_2', name: "PUCE OVERCLOCK", desc: "+5 Puissance", price: 50, type: 'pwr' },
+            { id: 'itm_3', name: "RESET SYSTÈME", desc: "Reset limite quotidienne", price: 35, type: 'reset' },
+            { id: 'itm_4', name: "AURA NÉON", desc: "Badge 'Elite' visuel", price: 150, type: 'skin' }
+        ];
+
+        const ACHIEVEMENTS = [
+            { id: 'ach_1', name: "PREMIER SANG", desc: "Terminer 1 séance", target: 1 },
+            { id: 'ach_2', name: "VÉTÉRAN", desc: "Atteindre le niveau 5", target: 5 },
+            { id: 'ach_3', name: "RICHE", desc: "Posséder 100 trophées", target: 100 }
+        ];
+
+        // --- MOTEUR AUDIO ---
+        const useAudioEngine = () => {
+            const playTick = () => {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 0.1);
+            };
+            return { playTick };
         };
 
         const App = () => {
+            const { playTick } = useAudioEngine();
             const audioRef = useRef(null);
-            const [loading, setLoading] = useState(true);
-            const [setup, setSetup] = useState(false);
+            
+            // --- ÉTATS ---
             const [view, setView] = useState('train');
             const [tasks, setTasks] = useState({});
             const [isRadioPlaying, setIsRadioPlaying] = useState(false);
-            const [progress, setProgress] = useState(0);
+            const [lvlUpEffect, setLvlUpEffect] = useState(false);
 
             const [db, setDb] = useState(() => {
-                const saved = localStorage.getItem('FQ_V18_FINAL');
-                return saved ? JSON.parse(saved) : null;
+                const saved = localStorage.getItem('FQ_FINAL_V16');
+                return saved ? JSON.parse(saved) : {
+                    user: "NOM_PILOTE",
+                    avatar: "🦾",
+                    level: 1,
+                    xp: 0,
+                    trophies: 10,
+                    power: 10,
+                    totalSessions: 0,
+                    dailySessions: 0,
+                    inventory: [],
+                    lastUpdate: new Date().toDateString()
+                };
             });
 
-            // ÉCRAN DE CHARGEMENT
+            // --- SAUVEGARDE & MAINTENANCE ---
             useEffect(() => {
-                const timer = setInterval(() => {
-                    setProgress(prev => {
-                        if (prev >= 100) {
-                            clearInterval(timer);
-                            setTimeout(() => {
-                                setLoading(false);
-                                if (!db) setSetup(true);
-                            }, 500);
-                            return 100;
-                        }
-                        return prev + 2;
-                    });
-                }, 30);
-                return () => clearInterval(timer);
-            }, [db]);
-
-            useEffect(() => { 
-                if (db) localStorage.setItem('FQ_V18_FINAL', JSON.stringify(db)); 
-            }, [db]);
-
-            const xpNeeded = db ? (50 + Math.floor(db.trophies / 2)) : 50;
-            const currentRank = db ? RANKS[Math.min(Math.floor(db.level / 20), 5)] : "UNKNOWN";
-
-            const playClick = () => {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const o = ctx.createOscillator(); const g = ctx.createGain();
-                o.frequency.value = 600; g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
-                o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.1);
-            };
-
-            const handleFinishSetup = (name) => {
-                const newDb = {
-                    user: name.toUpperCase(), avatar: "🦾", level: 1, xp: 0, trophies: 10,
-                    dailySessions: 0, totalSessions: 0, lastDate: new Date().toDateString()
-                };
-                setDb(newDb);
-                setSetup(false);
-            };
-
-            const completeWorkout = () => {
-                if (db.dailySessions >= 2) return alert("SYSTÈME EN RECHARGE : REPOS REQUIS (24H)");
-                if (Object.keys(tasks).length < 3) return alert("MISSIONS INCOMPLÈTES");
-
-                playClick();
-                let gainXP = 20 + Math.floor(db.trophies / 200);
-                let newXP = db.xp + gainXP;
-                let newLvl = db.level;
-
-                if (newXP >= xpNeeded) {
-                    newLvl++; newXP -= xpNeeded;
-                    alert(`UPGRADE DÉTECTÉE : GRADE ${RANKS[Math.min(Math.floor(newLvl / 20), 5)]}`);
+                localStorage.setItem('FQ_FINAL_V16', JSON.stringify(db));
+                // Reset quotidien
+                if (db.lastUpdate !== new Date().toDateString()) {
+                    setDb(prev => ({ ...prev, dailySessions: 0, lastUpdate: new Date().toDateString() }));
                 }
+            }, [db]);
 
-                setDb(prev => ({
-                    ...prev, xp: newXP, level: newLvl,
-                    trophies: prev.trophies + 15,
-                    dailySessions: prev.dailySessions + 1,
-                    totalSessions: prev.totalSessions + 1
-                }));
-                setTasks({});
+            // --- LOGIQUE DE JEU ---
+            const handleAction = (type, value) => {
+                playTick();
+                setDb(prev => {
+                    let newXp = prev.xp;
+                    let newLvl = prev.level;
+                    let newTrophies = prev.trophies;
+
+                    if (type === 'SESSION') {
+                        newXp += 40;
+                        newTrophies += 10;
+                    } else if (type === 'XP_BOOST') {
+                        newXp += value;
+                    }
+
+                    if (newXp >= 100) {
+                        newLvl += 1;
+                        newXp -= 100;
+                        setLvlUpEffect(true);
+                        setTimeout(() => setLvlUpEffect(false), 1500);
+                    }
+
+                    return { ...prev, xp: newXp, level: newLvl, trophies: newTrophies };
+                });
             };
 
-            // ÉCRAN DE CHARGEMENT VISUEL
-            if (loading) return (
-                <div className="h-screen flex flex-col items-center justify-center p-10 bg-[#030308]">
-                    <h1 className="font-o text-cyan-400 text-xl tracking-[0.5em] mb-10">INITIALISATION...</h1>
-                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div className="h-full bg-cyan-500" initial={{width:0}} animate={{width: `${progress}%`}} />
-                    </div>
-                    <p className="font-o text-[8px] text-gray-600 mt-4 tracking-widest uppercase">Chargement des modules de Calisthénie v18.0.4</p>
-                </div>
-            );
+            const toggleTask = (id) => {
+                playTick();
+                setTasks(prev => ({ ...prev, [id]: !prev[id] }));
+            };
 
-            // CRÉATEUR DE PSEUDO
-            if (setup) return (
-                <div className="h-screen flex flex-col items-center justify-center p-8">
-                    <div className="glass p-8 rounded-[2rem] w-full text-center border-cyan-500/30">
-                        <h2 className="font-o text-cyan-500 mb-6 tracking-widest text-sm">ENREGISTREMENT PILOTE</h2>
-                        <input id="nameInput" type="text" placeholder="ENTREZ VOTRE NOM" className="bg-transparent border-b border-white/20 text-center font-o text-xl w-full outline-none py-2 mb-8 focus:border-cyan-500 transition-colors" />
-                        <button onClick={() => handleFinishSetup(document.getElementById('nameInput').value)} className="w-full py-4 bg-white text-black font-o text-xs tracking-[0.3em] cyber-btn">ACTIVER LE PROFIL</button>
-                    </div>
-                </div>
-            );
+            const finalizeWorkout = () => {
+                if (db.dailySessions >= 2) return alert("LIMITE ATTEINTE");
+                if (Object.keys(tasks).filter(k => tasks[k]).length < 3) return alert("MISSIONS INCOMPLÈTES");
+                
+                handleAction('SESSION');
+                setDb(prev => ({ ...prev, dailySessions: prev.dailySessions + 1, totalSessions: prev.totalSessions + 1 }));
+                setTasks({});
+                alert("DONNÉES TRANSMISES AU CORE. +40 XP");
+            };
 
+            const buyItem = (item) => {
+                playTick();
+                if (db.trophies < item.price) return alert("CRÉDITS INSUFFISANTS");
+                
+                setDb(prev => {
+                    let nPwr = prev.power;
+                    let nSessions = prev.dailySessions;
+                    if (item.type === 'pwr') nPwr += 5;
+                    if (item.type === 'reset') nSessions = 0;
+                    
+                    return {
+                        ...prev,
+                        trophies: prev.trophies - item.price,
+                        power: nPwr,
+                        dailySessions: nSessions,
+                        inventory: [...prev.inventory, item.id]
+                    };
+                });
+                if (item.type === 'xp') handleAction('XP_BOOST', 25);
+                alert(`${item.name} ACQUIS.`);
+            };
+
+            // --- RENDU ---
             return (
                 <div className="max-w-md mx-auto h-screen flex flex-col p-4 relative">
                     <audio ref={audioRef} loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" />
+                    
+                    {/* FLASH LEVEL UP */}
+                    <AnimatePresence>
+                        {lvlUpEffect && (
+                            <motion.div 
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-[200] flex items-center justify-center bg-cyan-500/20 backdrop-blur-md"
+                            >
+                                <div className="text-center">
+                                    <h1 className="font-o text-5xl font-black text-white shadow-cyan-500 drop-shadow-2xl">LEVEL UP !</h1>
+                                    <p className="font-o text-cyan-400 tracking-[0.5em] mt-4">SYSTÈME MIS À JOUR</p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                    <header className="glass p-4 rounded-3xl mb-4 flex justify-between items-center border-l-4 border-cyan-500">
-                        <div className="flex gap-3 items-center">
-                            <div className="text-3xl bg-white/5 w-12 h-12 flex items-center justify-center rounded-xl border border-white/10">{db.avatar}</div>
+                    {/* HEADER STATUS */}
+                    <header className="glass-panel p-4 rounded-[2rem] mb-4 flex justify-between items-center border-l-4 border-cyan-500">
+                        <div className="flex gap-4 items-center">
+                            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-3xl border border-white/10">
+                                {db.avatar}
+                            </div>
                             <div>
-                                <h2 className="font-o text-[9px] text-cyan-400 tracking-tighter">{currentRank}</h2>
-                                <h2 className="font-o text-sm tracking-tighter leading-none">{db.user}</h2>
+                                <h2 className="font-o text-lg tracking-tighter leading-none">{db.user}</h2>
+                                <div className="flex gap-2 mt-2">
+                                    <span className="text-[8px] bg-cyan-500/20 px-2 py-0.5 rounded text-cyan-400 font-bold uppercase">LVL {db.level}</span>
+                                    <span className="text-[8px] bg-violet-500/20 px-2 py-0.5 rounded text-violet-400 font-bold uppercase">PWR {db.power}</span>
+                                </div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="font-o text-xl text-yellow-400 leading-none">{db.trophies}🏆</div>
-                            <div className="text-[7px] text-gray-500 font-bold uppercase mt-1">Crédits</div>
+                            <div className="font-o text-2xl text-yellow-400 tracking-tighter">{db.trophies}🏆</div>
+                            <div className="text-[8px] text-gray-500 font-black tracking-widest uppercase">Crédits</div>
                         </div>
                     </header>
 
-                    <div className="glass px-4 py-2 rounded-2xl mb-4 flex items-center justify-between border-violet-500/20">
-                        <button onClick={() => { isRadioPlaying ? audioRef.current.pause() : audioRef.current.play(); setIsRadioPlaying(!isRadioPlaying); }} className={`w-8 h-8 rounded-full border ${isRadioPlaying ? 'border-cyan-500 text-cyan-500 shadow-[0_0_10px_#00f3ff]' : 'border-white/10 text-gray-600'}`}>
-                            {isRadioPlaying ? 'Ⅱ' : '▶'}
-                        </button>
-                        <div className="flex gap-1 items-end h-3">
-                            {[1,2,3,4,5].map(i => <div key={i} className={`w-[2px] bg-cyan-500 ${isRadioPlaying ? 'animate-bounce' : 'h-[2px]'}`} style={{animationDuration: '0.6s', animationDelay: i*0.1+'s'}} />)}
+                    {/* RADIO UNIT */}
+                    <div className="glass-panel px-5 py-3 rounded-2xl mb-4 flex items-center justify-between border-violet-500/20">
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={() => {
+                                    playTick();
+                                    isRadioPlaying ? audioRef.current.pause() : audioRef.current.play();
+                                    setIsRadioPlaying(!isRadioPlaying);
+                                }}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${isRadioPlaying ? 'border-cyan-500 text-cyan-500 shadow-[0_0_10px_#00f3ff]' : 'border-white/10 text-gray-500'}`}
+                            >
+                                {isRadioPlaying ? 'Ⅱ' : '▶'}
+                            </button>
+                            <div>
+                                <p className="text-[9px] font-o text-violet-400 tracking-widest">NEON_RADIO_V16</p>
+                                <p className="text-[7px] text-gray-600 uppercase">Signal: Synthwave_Alpha_08</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-1 items-end h-4">
+                            {[1,2,3,4,5,6].map(i => (
+                                <div key={i} className={`vis-bar ${isRadioPlaying ? 'vis-active' : ''}`} style={{animationDelay: `${i*0.1}s`}} />
+                            ))}
                         </div>
                     </div>
 
-                    <main className="flex-1 overflow-y-auto no-scrollbar pb-24">
-                        {view === 'train' && (
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center px-1">
-                                    <h3 className="text-[10px] font-black text-cyan-500 tracking-widest uppercase italic font-o">Missions_Du_Jour</h3>
-                                    <span className="text-[9px] text-gray-500 font-bold">{db.dailySessions}/2</span>
-                                </div>
-                                {Object.entries(EXOS).map(([key, list]) => (
-                                    <div key={key} onClick={() => { playClick(); toggleTask(key); }} className={`glass p-5 rounded-2xl flex justify-between items-center transition-all ${tasks[key] ? 'border-cyan-500/50 bg-cyan-500/5 shadow-[inset_0_0_20px_rgba(0,243,255,0.05)]' : 'opacity-60'}`} onClick={() => {playClick(); setTasks(p=>({...p, [key]:!p[key]}))}}>
-                                        <div>
-                                            <div className="text-[7px] text-violet-500 font-bold uppercase tracking-widest">{key}_MODULE</div>
-                                            <div className="font-o text-sm text-white">{list[Math.min(Math.floor(db.level/25), 3)]}</div>
-                                        </div>
-                                        <div className={`w-6 h-6 rounded border flex items-center justify-center text-[10px] ${tasks[key] ? 'bg-cyan-500 text-black' : 'border-white/10'}`}>{tasks[key] ? '✓' : ''}</div>
-                                    </div>
-                                ))}
-                                <button onClick={completeWorkout} className="w-full py-5 mt-4 bg-white text-black font-o text-[10px] tracking-[0.4em] cyber-btn">SYNCHRONISER LA SESSION</button>
-                            </div>
-                        )}
+                    {/* XP PROGRESS */}
+                    <div className="px-2 mb-6">
+                        <div className="flex justify-between text-[8px] font-black mb-1 text-gray-500 uppercase tracking-widest">
+                            <span>Surcharge_Système</span>
+                            <span>{db.xp}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
+                            <motion.div animate={{width: `${db.xp}%`}} className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400" />
+                        </div>
+                    </div>
 
-                        {view === 'stats' && (
-                            <div className="space-y-4">
-                                <div className="glass p-8 rounded-[2.5rem] text-center border-cyan-500/20">
-                                    <div className="text-6xl mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{db.avatar}</div>
-                                    <h3 className="font-o text-2xl tracking-tighter text-white mb-1">{db.user}</h3>
-                                    <p className="text-cyan-500 font-o text-[10px] tracking-[0.3em] uppercase mb-8">{currentRank} // LVL {db.level}</p>
+                    {/* CONTENU PRINCIPAL */}
+                    <main className="flex-1 overflow-y-auto no-scrollbar pb-28">
+                        <AnimatePresence mode="wait">
+                            {view === 'train' && (
+                                <motion.div key="t" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-3">
+                                    <div className="flex justify-between items-center px-1">
+                                        <h3 className="text-[10px] font-black text-cyan-500 tracking-[0.3em] uppercase">Missions_Physiques</h3>
+                                        <span className="text-[8px] text-gray-500 font-bold">{db.dailySessions}/2 SÉANCES</span>
+                                    </div>
                                     
-                                    <div className="text-left mb-6">
-                                        <div className="flex justify-between text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-                                            <span>XP_PROG_SYSTEM</span>
-                                            <span>{db.xp} / {xpNeeded}</span>
+                                    {Object.entries(WORKOUT_MODULES).map(([cat, list]) => (
+                                        <div 
+                                            key={cat} 
+                                            onClick={() => toggleTask(cat)}
+                                            className={`glass-panel p-5 rounded-2xl flex justify-between items-center transition-all ${tasks[cat] ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-white/5 opacity-60'}`}
+                                        >
+                                            <div>
+                                                <div className="text-[7px] text-violet-500 font-black mb-1 tracking-widest uppercase">{cat}_MODULE</div>
+                                                <div className="font-o text-sm text-white">{list[Math.min(db.level - 1, 3)] || list[0]}</div>
+                                                <div className="text-[8px] text-gray-500 mt-1 uppercase">Objectif: <span className="text-white">Repetition Max</span></div>
+                                            </div>
+                                            <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${tasks[cat] ? 'bg-cyan-500 border-white text-black' : 'border-white/10'}`}>
+                                                {tasks[cat] ? '✓' : ''}
+                                            </div>
                                         </div>
-                                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden p-[1px]">
-                                            <div className="h-full bg-cyan-500" style={{width: `${(db.xp/xpNeeded)*100}%`}}></div>
+                                    ))}
+                                    
+                                    <button 
+                                        onClick={finalizeWorkout}
+                                        className={`w-full py-6 mt-4 cyber-button font-black font-o text-[10px] tracking-[0.4em] ${Object.keys(tasks).filter(k=>tasks[k]).length >= 3 ? 'bg-white text-black' : 'bg-white/5 text-gray-700 pointer-events-none'}`}
+                                    >
+                                        TRANSMETTRE_SÉANCE
+                                    </button>
+                                </motion.div>
+                            )}
+
+                            {view === 'shop' && (
+                                <motion.div key="s" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="grid grid-cols-2 gap-3">
+                                    <h3 className="col-span-2 text-[10px] font-black text-pink-500 tracking-[0.3em] uppercase mb-2">// MARCHÉ_NOIR_OMNI</h3>
+                                    {SHOP_ITEMS.map(item => (
+                                        <div key={item.id} className="glass-panel p-4 rounded-2xl border-pink-500/20 flex flex-col justify-between h-44">
+                                            <div>
+                                                <div className="text-[7px] text-pink-500 font-black uppercase mb-1">{item.type}</div>
+                                                <h4 className="font-o text-[10px] text-white leading-tight mb-2 uppercase">{item.name}</h4>
+                                                <p className="text-[9px] text-gray-500 leading-tight uppercase font-bold">{item.desc}</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => buyItem(item)}
+                                                className="w-full py-2 bg-pink-500/10 border border-pink-500/50 text-pink-500 text-[9px] font-o rounded-lg hover:bg-pink-500 hover:text-white transition-all"
+                                            >
+                                                {item.price} 🏆
+                                            </button>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+
+                            {view === 'stats' && (
+                                <motion.div key="st" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                                    <div className="glass-panel p-8 rounded-[2.5rem] text-center">
+                                        <div className="w-20 h-20 mx-auto mb-6 bg-white/5 rounded-3xl flex items-center justify-center text-4xl border border-white/10">
+                                            {db.avatar}
+                                        </div>
+                                        <input 
+                                            className="bg-transparent border-b border-cyan-500 text-center font-o text-xl text-white outline-none w-full uppercase mb-8"
+                                            value={db.user}
+                                            onChange={(e) => setDb(prev => ({...prev, user: e.target.value}))}
+                                        />
+                                        
+                                        <div className="grid grid-cols-5 gap-2 mb-8">
+                                            {AVATARS.map(av => (
+                                                <button 
+                                                    key={av} 
+                                                    onClick={() => { playTick(); setDb(prev => ({...prev, avatar: av})) }}
+                                                    className={`p-2 rounded-lg bg-white/5 border transition-all ${db.avatar === av ? 'border-cyan-500' : 'border-transparent'}`}
+                                                >
+                                                    {av}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 text-left">
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Total_Sessions</div>
+                                                <div className="font-o text-lg text-cyan-400">{db.totalSessions}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Power_Index</div>
+                                                <div className="font-o text-lg text-violet-400">{db.power}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="glass-panel p-6 rounded-[2rem]">
+                                        <h3 className="text-[10px] font-black text-yellow-500 tracking-[0.3em] uppercase mb-4 px-1">Succès_Débloqués</h3>
+                                        <div className="space-y-3">
+                                            {ACHIEVEMENTS.map(ach => {
+                                                const isDone = (ach.id === 'ach_1' && db.totalSessions >= 1) || 
+                                                               (ach.id === 'ach_2' && db.level >= 5) || 
+                                                               (ach.id === 'ach_3' && db.trophies >= 100);
+                                                return (
+                                                    <div key={ach.id} className={`flex items-center gap-4 p-3 rounded-xl border ${isDone ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-white/5 opacity-30'}`}>
+                                                        <div className="text-xl">{isDone ? '⭐' : '🔒'}</div>
+                                                        <div>
+                                                            <div className="text-[9px] font-o text-white uppercase">{ach.name}</div>
+                                                            <div className="text-[7px] text-gray-500 uppercase">{ach.desc}</div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-white/5 p-4 rounded-2xl text-left border border-white/5">
-                                            <div className="text-[7px] text-gray-500 uppercase font-bold">Total_Workouts</div>
-                                            <div className="font-o text-xl text-white">{db.totalSessions}</div>
-                                        </div>
-                                        <div className="bg-white/5 p-4 rounded-2xl text-left border border-white/5">
-                                            <div className="text-[7px] text-gray-500 uppercase font-bold">Calis_Progress</div>
-                                            <div className="font-o text-xl text-violet-400">{Math.min(100, Math.floor((db.trophies/20000)*100))}%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button onClick={() => { if(confirm("FORMATEUR LE SYSTÈME ?")) {localStorage.clear(); location.reload();}}} className="w-full text-[8px] text-red-500/20 font-black tracking-widest py-4 uppercase">[ RÉINITIALISATION_DU_NOYAU ]</button>
-                            </div>
-                        )}
+                                    <button 
+                                        onClick={() => { if(confirm("FORMATER TOUTES LES DONNÉES ?")) { localStorage.clear(); location.reload(); }}}
+                                        className="w-full text-[8px] text-red-500/30 hover:text-red-500 tracking-[0.5em] font-black uppercase transition-colors py-4"
+                                    >
+                                        [ RÉINITIALISATION_COMPLÈTE ]
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </main>
 
-                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] glass rounded-full p-1.5 flex gap-1 z-50">
-                        {['train', 'stats'].map(m => (
-                            <button key={m} onClick={() => setView(m)} className={`flex-1 py-3 rounded-full font-o text-[9px] tracking-widest transition-all ${view === m ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(0,243,255,0.5)]' : 'text-gray-500'}`}>
+                    {/* DOCK NAVIGATION */}
+                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] glass-panel rounded-full p-1.5 flex gap-1 z-[150]">
+                        {['train', 'shop', 'stats'].map(m => (
+                            <button 
+                                key={m} 
+                                onClick={() => { playTick(); setView(m); }} 
+                                className={`flex-1 py-3 rounded-full font-o text-[9px] tracking-[0.3em] transition-all ${view === m ? 'bg-cyan-500 text-black shadow-[0_0_20px_#00f3ff]' : 'text-gray-500 hover:text-white'}`}
+                            >
                                 {m.toUpperCase()}
                             </button>
                         ))}
