@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FITNESS QUEST - OMNI V15 - NEURAL OVERRIDE</title>
+    <title>FITNESS QUEST - V16 - OMNI PROTOCOL</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -13,18 +13,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --cyan: #00f3ff; --pink: #ff0055; --violet: #bc13fe; --dark: #030308; }
+        :root { --cyan: #00f3ff; --pink: #ff0055; --violet: #bc13fe; --dark: #030308; --gold: #ffda08; }
         body { background: var(--dark); color: #fff; font-family: 'Rajdhani', sans-serif; overflow: hidden; height: 100vh; }
         .font-o { font-family: 'Orbitron', sans-serif; }
+        
+        /* Background & Effects */
         .grid-bg { position: fixed; inset: 0; z-index: -1; background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(60deg) translateY(-100px); animation: grid-move 20s linear infinite; }
         @keyframes grid-move { from { background-position: 0 0; } to { background-position: 0 50px; } }
-        .glass { background: rgba(10, 10, 25, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(0, 243, 255, 0.1); }
+        
+        .glass { background: rgba(10, 10, 25, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(0, 243, 255, 0.1); }
         .cyber-border { border-left: 4px solid var(--cyan); clip-path: polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%); }
-        .cyber-btn { clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); transition: 0.2s; }
-        .cyber-btn:active { transform: scale(0.95); filter: hue-rotate(45deg); }
+        .cyber-btn { clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); transition: 0.2s; position: relative; overflow: hidden; }
+        .cyber-btn::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); animation: sheen 3s infinite; }
+        @keyframes sheen { 100% { left: 100%; } }
+        
+        .glitch-text { animation: glitch 2s infinite; }
+        @keyframes glitch { 
+            0% { text-shadow: 2px 0 var(--pink), -2px 0 var(--cyan); }
+            1% { text-shadow: -2px 0 var(--pink), 2px 0 var(--cyan); }
+            2% { text-shadow: 0 0 white; }
+        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .scanline { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: rgba(0,243,255,0.1); animation: scan 3s linear infinite; pointer-events: none; }
+        .scanline { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: rgba(0,243,255,0.1); animation: scan 3s linear infinite; pointer-events: none; z-index: 100; }
         @keyframes scan { to { top: 100%; } }
+
+        .hp-bar { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body>
@@ -35,108 +49,123 @@
         const { useState, useEffect, useMemo, useRef } = React;
         const { motion, AnimatePresence } = window.Motion;
 
-        // --- DATABASE ---
+        // --- CONSTANTES & DATA ---
         const AVATARS = [
-            { id: "a1", icon: "🦾", name: "IRON-CLAD", perk: "+10% Force", cost: 0 },
-            { id: "a2", icon: "🧬", name: "BIO-TECH", perk: "+10% Récup", cost: 0 },
-            { id: "a3", icon: "⚡", name: "NEON-SPEED", perk: "+10% Agilité", cost: 50 },
-            { id: "a4", icon: "🥷", name: "VOID-WALKER", perk: "+10% Crit", cost: 100 },
-            { id: "a5", icon: "👹", name: "ONI-PULSE", perk: "Double XP", cost: 250 }
+            { id: "a1", icon: "🦾", name: "IRON-CLAD", perk: "FORCE +15%", cost: 0, desc: "Ancien tank de la zone industrielle." },
+            { id: "a2", icon: "🧬", name: "BIO-HAZARD", perk: "REGEN +20%", cost: 0, desc: "Mutant optimisé par nanomachines." },
+            { id: "a3", icon: "⚡", name: "NEON-STRIKE", perk: "SPEED +10%", cost: 150, desc: "Infiltrateur des quartiers hauts." },
+            { id: "a4", icon: "🥷", name: "GHOST-VOID", perk: "CRIT +25%", cost: 300, desc: "Une ombre dans le flux de données." },
+            { id: "a5", icon: "👹", name: "ONI-PULSE", perk: "EXP X2", cost: 600, desc: "Démon du noyau central." }
         ];
 
-        const QUESTS = [
-            { id: 'q1', title: "Surcharge", goal: 50, type: 'reps', reward: 20, desc: "Faire 50 reps au total" },
-            { id: 'q2', title: "Persistance", goal: 2, type: 'sessions', reward: 15, desc: "Finir 2 sessions" },
-            { id: 'q3', title: "Élite", goal: 5, type: 'power', reward: 50, desc: "Atteindre 5 Power Levels" }
+        const IMPLANTS = [
+            { id: 'i1', name: "Neural Link", price: 80, stat: "XP", bonus: 5, icon: "🧠" },
+            { id: 'i2', name: "Titan Fibers", price: 120, stat: "ATK", bonus: 10, icon: "🦴" },
+            { id: 'i3', name: "Ocular HUD", price: 200, stat: "CRIT", bonus: 15, icon: "👁️" }
         ];
 
-        const WORKOUT_DB = {
-            PULL: ["Australiennes", "Négatives", "Chin-ups", "Classiques", "Large Grip", "Typewriter"],
-            PUSH: ["Pompes Genoux", "Standard", "Diamant", "Archer", "Pseudo-Planche", "One-Arm Prep"],
-            DIPS: ["Banc", "Chaise", "Barres Parallèles", "L-Sit Dips", "Profonds", "Lestés"],
-            LEGS: ["Squats", "Fentes", "Bulgares", "Cossack", "Jump Squats", "Pistol Squat"]
+        const ENEMIES = [
+            { name: "SCRAP-BOT", hp: 100, atk: 5, reward: 50, icon: "🤖" },
+            { name: "CYBER-STALKER", hp: 250, atk: 12, reward: 120, icon: "🕷️" },
+            { name: "ARCH-ADMIN", hp: 600, atk: 25, reward: 500, icon: "🔱" }
+        ];
+
+        const EXERCISES = {
+            PULL: ["Australiennes", "Pull-ups", "Chin-ups", "Muscle-ups"],
+            PUSH: ["Pompes", "Diamants", "Dips", "HSPU"],
+            LEGS: ["Squats", "Fentes", "Pistols", "Jump Squats"],
+            CORE: ["Planche", "L-Sit", "Hollow Hold", "V-Ups"]
         };
 
+        // --- COMPOSANTS PRINCIPAUX ---
+
         const App = () => {
-            const [view, setView] = useState('train');
+            const [view, setView] = useState('hub'); // hub, train, combat, shop, config
             const [db, setDb] = useState(() => {
-                const s = localStorage.getItem('FQ_V15');
-                return s ? JSON.parse(s) : {
+                const save = localStorage.getItem('FQ_V16_ULTRA');
+                return save ? JSON.parse(save) : {
                     user: null, avatar: "🦾", avatarName: "IRON-CLAD",
-                    level: 1, xp: 0, trophies: 10, power: 10,
-                    restDays: [], sessionsToday: 0, lastDate: new Date().toDateString(),
-                    unlockedAvatars: ["a1", "a2"], settings: { sfx: true, music: false },
-                    stats: { totalReps: 0, completedQuests: [], totalSessions: 0 }
+                    lvl: 1, xp: 0, creds: 50, power: 10,
+                    inventory: [], logs: ["Système initialisé..."],
+                    stats: { reps: 0, wins: 0, days: 0 },
+                    settings: { sfx: true, music: false },
+                    unlocked: ["a1", "a2"]
                 };
             });
 
-            const audioRef = useRef(new Audio("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"));
-
             useEffect(() => {
-                localStorage.setItem('FQ_V15', JSON.stringify(db));
-                if(db.settings.music) audioRef.current.play().catch(()=>{}); else audioRef.current.pause();
+                localStorage.setItem('FQ_V16_ULTRA', JSON.stringify(db));
             }, [db]);
 
-            const playSfx = () => { if(db.settings.sfx) new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3").play().catch(()=>{}); };
-
-            const handleAction = (cb) => { playSfx(); cb(); };
-
-            const finalizeSession = (tasks) => {
-                if(db.sessionsToday >= 2) return alert("SYSTÈME EN SURCHAUFFE. ATTENDEZ DEMAIN.");
-                setDb(p => {
-                    let newXp = p.xp + 40;
-                    let newLvl = p.level;
-                    if(newXp >= 100) { newLvl++; newXp = 0; }
-                    return { ...p, xp: newXp, level: newLvl, trophies: p.trophies + 15, sessionsToday: p.sessionsToday + 1, stats: { ...p.stats, totalSessions: p.stats.totalSessions + 1 } };
-                });
-                alert("DONNÉES SYNCHRONISÉES. +15 TROPHÉES");
+            const addLog = (msg) => {
+                const time = new Date().toLocaleTimeString();
+                setDb(p => ({ ...p, logs: [`[${time}] ${msg}`, ...p.logs].slice(0, 10) }));
             };
 
-            const downloadExe = () => {
-                const blob = new Blob([document.documentElement.outerHTML], {type: 'text/html'});
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = "FitnessQuest_Launcher.html";
-                a.click();
+            const playSfx = (type) => {
+                if(!db.settings.sfx) return;
+                const sounds = {
+                    click: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3",
+                    level: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3",
+                    error: "https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3"
+                };
+                new Audio(sounds[type] || sounds.click).play().catch(()=>{});
             };
 
-            if (!db.user) return <Setup onComplete={(data) => setDb(p => ({...p, ...data}))} />;
+            if (!db.user) return <Auth onDone={(name) => setDb(p => ({...p, user: name}))} />;
 
             return (
-                <div className="max-w-md mx-auto h-screen flex flex-col p-4 relative overflow-hidden">
+                <div className="max-w-md mx-auto h-screen flex flex-col p-4 relative overflow-hidden font-o">
                     <div className="scanline"></div>
                     
-                    {/* TOP BAR */}
-                    <div className="glass p-4 rounded-2xl cyber-border mb-4 flex justify-between items-center">
+                    {/* UI HEADER */}
+                    <header className="glass p-4 rounded-xl border-b-2 border-cyan-500 mb-4 flex justify-between items-center relative overflow-hidden">
                         <div className="flex items-center gap-3">
-                            <div className="text-3xl bg-white/5 p-2 rounded-xl border border-cyan-500/30">{db.avatar}</div>
+                            <div className="text-3xl drop-shadow-[0_0_8px_cyan]">{db.avatar}</div>
                             <div>
-                                <div className="font-o text-xs text-cyan-400">{db.user}</div>
-                                <div className="h-1.5 w-24 bg-white/10 rounded-full mt-1 overflow-hidden">
-                                    <div className="h-full bg-cyan-500 shadow-[0_0_8px_cyan]" style={{width: `${db.xp}%`}}></div>
+                                <div className="text-[10px] text-cyan-400 font-black tracking-widest">{db.user}</div>
+                                <div className="text-[14px] text-white leading-none">LVL {db.lvl}</div>
+                                <div className="w-24 h-1 bg-white/10 mt-1 rounded-full overflow-hidden">
+                                    <motion.div className="h-full bg-cyan-500" initial={{width:0}} animate={{width: `${db.xp}%`}} />
                                 </div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="font-o text-pink-500">{db.trophies} 🏆</div>
-                            <div className="text-[8px] tracking-widest text-gray-500 uppercase">Credits_Link</div>
+                            <div className="text-pink-500 font-bold">{db.creds} ₡</div>
+                            <div className="text-[8px] text-gray-500">CREDITS_NODE</div>
                         </div>
-                    </div>
+                    </header>
 
+                    {/* VUES DYNAMIQUES */}
                     <main className="flex-1 overflow-y-auto no-scrollbar pb-24">
                         <AnimatePresence mode="wait">
-                            {view === 'train' && <Training db={db} onFinish={finalizeSession} playSfx={playSfx}/>}
-                            {view === 'quests' && <Quests db={db} setDb={setDb} />}
-                            {view === 'avatars' && <AvatarCatalog db={db} setDb={setDb} playSfx={playSfx} />}
-                            {view === 'config' && <Settings db={db} setDb={setDb} onDownload={downloadExe} />}
+                            {view === 'hub' && <Hub db={db} setView={setView} />}
+                            {view === 'train' && <Workout db={db} setDb={setDb} addLog={addLog} playSfx={playSfx} />}
+                            {view === 'combat' && <Combat db={db} setDb={setDb} addLog={addLog} onExit={() => setView('hub')} />}
+                            {view === 'shop' && <Shop db={db} setDb={setDb} playSfx={playSfx} />}
+                            {view === 'config' && <Config db={db} setDb={setDb} />}
                         </AnimatePresence>
                     </main>
 
-                    {/* NAV */}
-                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] glass rounded-full p-1.5 flex gap-1 z-50 border border-white/10 shadow-2xl">
-                        {['train', 'quests', 'avatars', 'config'].map(m => (
-                            <button key={m} onClick={() => handleAction(() => setView(m))} className={`flex-1 py-3 rounded-full font-o text-[8px] tracking-tighter transition-all ${view === m ? 'bg-cyan-500 text-black shadow-[0_0_15px_#00f3ff]' : 'text-gray-500'}`}>
-                                {m.toUpperCase()}
+                    {/* BARRE DE LOGS BASSE */}
+                    <div className="fixed bottom-24 left-4 right-4 h-12 glass rounded-lg border border-white/5 p-2 overflow-hidden pointer-events-none opacity-50">
+                        {db.logs.map((log, i) => (
+                            <div key={i} className="text-[8px] text-cyan-200/50 font-mono truncate">{log}</div>
+                        ))}
+                    </div>
+
+                    {/* NAVIGATION UNIFIÉE */}
+                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] glass rounded-2xl p-2 flex gap-1 z-50 border border-cyan-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                        {[
+                            {id: 'hub', label: 'NEURON', icon: '🏠'},
+                            {id: 'train', label: 'CYBER', icon: '🦾'},
+                            {id: 'combat', label: 'FIGHT', icon: '⚔️'},
+                            {id: 'shop', label: 'MODS', icon: '🔌'},
+                            {id: 'config', label: 'SYS', icon: '⚙️'}
+                        ].map(item => (
+                            <button key={item.id} onClick={() => { playSfx('click'); setView(item.id); }} className={`flex-1 py-3 rounded-xl transition-all flex flex-col items-center gap-1 ${view === item.id ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'text-gray-500'}`}>
+                                <span className="text-sm">{item.icon}</span>
+                                <span className="text-[8px] font-bold tracking-tighter">{item.label}</span>
                             </button>
                         ))}
                     </nav>
@@ -144,133 +173,243 @@
             );
         };
 
-        const Training = ({ db, onFinish, playSfx }) => {
-            const [done, setDone] = useState({});
-            const items = Object.entries(WORKOUT_DB);
+        // --- SUB-VIEWS ---
+
+        const Hub = ({ db, setView }) => (
+            <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="glass p-4 rounded-xl border-l-2 border-pink-500">
+                        <div className="text-[10px] text-gray-400 uppercase">Power Level</div>
+                        <div className="text-2xl font-black text-pink-500">{db.power}</div>
+                    </div>
+                    <div className="glass p-4 rounded-xl border-l-2 border-violet-500">
+                        <div className="text-[10px] text-gray-400 uppercase">Total Reps</div>
+                        <div className="text-2xl font-black text-violet-500">{db.stats.reps}</div>
+                    </div>
+                </div>
+
+                <div className="glass p-6 rounded-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-2 opacity-10 text-6xl italic font-black">QUEST</div>
+                    <h3 className="text-cyan-400 text-sm mb-4 tracking-[0.2em]">MISSION_ACTUELLE</h3>
+                    <div className="p-4 border border-cyan-500/20 bg-cyan-500/5 rounded-lg">
+                        <p className="text-xs text-white leading-relaxed mb-4">Éliminer l'unité <span className="text-pink-500 font-bold">SCRAP-BOT</span> en utilisant 50 reps de puissance.</p>
+                        <button onClick={() => setView('train')} className="w-full py-3 cyber-btn bg-cyan-500 text-black text-[10px] font-black">DÉMARRER PROTOCOLE</button>
+                    </div>
+                </div>
+            </motion.div>
+        );
+
+        const Workout = ({ db, setDb, addLog, playSfx }) => {
+            const [active, setActive] = useState(null);
+            const [reps, setReps] = useState(0);
+
+            const complete = () => {
+                if (reps <= 0) return;
+                playSfx('level');
+                addLog(`Séquence ${active} terminée : +${reps} Reps`);
+                setDb(p => {
+                    let nextXp = p.xp + (reps * 2);
+                    let nextLvl = p.lvl;
+                    if(nextXp >= 100) { nextLvl++; nextXp = 0; }
+                    return {
+                        ...p,
+                        xp: nextXp, lvl: nextLvl,
+                        creds: p.creds + Math.floor(reps / 2),
+                        power: p.power + 1,
+                        stats: { ...p.stats, reps: p.stats.reps + reps }
+                    };
+                });
+                setReps(0); setActive(null);
+            };
+
             return (
-                <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-3">
-                    <div className="text-[10px] font-black text-cyan-500 tracking-[0.3em] mb-4 uppercase text-center">// Protocoles_Journaliers</div>
-                    {items.map(([cat, list]) => (
-                        <div key={cat} onClick={() => { playSfx(); setDone(p => ({...p, [cat]: !p[cat]})); }} className={`glass p-4 rounded-xl border-l-2 transition-all ${done[cat] ? 'border-cyan-500 bg-cyan-500/10' : 'border-white/10 opacity-60'}`}>
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <div className="text-[8px] text-violet-400 font-bold uppercase">{cat}_MODULE</div>
-                                    <div className="font-o text-sm">{list[Math.min(db.level - 1, 5)]}</div>
-                                </div>
-                                <div className={`w-6 h-6 rounded border flex items-center justify-center ${done[cat] ? 'bg-cyan-500 border-none text-black' : 'border-white/20'}`}>
-                                    {done[cat] && "✓"}
-                                </div>
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-4">
+                    <h2 className="text-center text-[10px] text-cyan-500 tracking-[0.5em] mb-4 uppercase">// Training_Matrix</h2>
+                    
+                    {!active ? (
+                        <div className="grid grid-cols-1 gap-3">
+                            {Object.entries(EXERCISES).map(([cat, list]) => (
+                                <button key={cat} onClick={() => setActive(cat)} className="glass p-5 rounded-xl border border-white/5 flex justify-between items-center hover:border-cyan-500 transition-all group">
+                                    <span className="text-sm font-bold tracking-widest">{cat}</span>
+                                    <span className="text-xs text-cyan-500 group-hover:translate-x-2 transition-transform">SELECT >></span>
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="glass p-8 rounded-3xl text-center border-2 border-cyan-500 shadow-[0_0_20px_rgba(0,243,255,0.1)]">
+                            <div className="text-[10px] text-pink-500 mb-2 font-black uppercase tracking-widest">{active} MODULE ACTIVE</div>
+                            <div className="text-5xl font-black mb-8 glitch-text">{reps}</div>
+                            
+                            <div className="flex gap-4 mb-8">
+                                <button onClick={() => setReps(r => r + 1)} className="flex-1 py-8 bg-white/5 border border-white/10 rounded-2xl text-2xl active:bg-cyan-500 active:text-black">+</button>
+                                <button onClick={() => setReps(r => Math.max(0, r - 1))} className="flex-1 py-8 bg-white/5 border border-white/10 rounded-2xl text-2xl">-</button>
                             </div>
-                        </motion.div>
-                    ))}
-                    <button onClick={() => Object.keys(done).length === 4 && onFinish(done)} className={`w-full py-5 cyber-btn font-o text-xs mt-4 ${Object.keys(done).length === 4 ? 'bg-white text-black' : 'bg-white/5 text-gray-600'}`}>
-                        TRANSMETTRE_DONNEES
-                    </button>
+
+                            <div className="space-y-3">
+                                <button onClick={complete} className="w-full py-4 cyber-btn bg-cyan-500 text-black font-black text-xs">ENREGISTRER_DONNEES</button>
+                                <button onClick={() => setActive(null)} className="w-full py-2 text-[8px] text-gray-500 uppercase tracking-widest">Annuler la session</button>
+                            </div>
+                        </div>
+                    )}
                 </motion.div>
             );
         };
 
-        const Quests = ({ db, setDb }) => (
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-4">
-                <div className="text-[10px] font-black text-pink-500 tracking-[0.3em] mb-4 uppercase text-center">// Objectifs_Reseau</div>
-                {QUESTS.map(q => (
-                    <div key={q.id} className="glass p-5 rounded-2xl relative overflow-hidden border border-pink-500/20">
-                        <div className="flex justify-between mb-2">
-                            <h4 className="font-o text-sm text-pink-500">{q.title}</h4>
-                            <span className="text-xs text-white">{q.reward} 🏆</span>
-                        </div>
-                        <p className="text-[10px] text-gray-400 uppercase leading-tight mb-4">{q.desc}</p>
-                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-pink-600" style={{width: '30%'}}></div>
+        const Combat = ({ db, setDb, addLog, onExit }) => {
+            const enemy = ENEMIES[Math.min(db.lvl - 1, 2)];
+            const [eHp, setEHp] = useState(enemy.hp);
+            const [pHp, setPHp] = useState(100);
+            const [turn, setTurn] = useState('PLAYER');
+
+            const attack = () => {
+                if(turn !== 'PLAYER') return;
+                const dmg = db.power + Math.floor(Math.random() * 5);
+                setEHp(h => Math.max(0, h - dmg));
+                addLog(`Attaque : -${dmg} HP sur ${enemy.name}`);
+                
+                if(eHp - dmg <= 0) {
+                    addLog(`VICTOIRE ! +${enemy.reward} Credits`);
+                    setDb(p => ({ ...p, creds: p.creds + enemy.reward, stats: { ...p.stats, wins: p.stats.wins + 1 } }));
+                    setTimeout(onExit, 2000);
+                } else {
+                    setTurn('ENEMY');
+                    setTimeout(enemyTurn, 1000);
+                }
+            };
+
+            const enemyTurn = () => {
+                const dmg = enemy.atk;
+                setPHp(h => Math.max(0, h - dmg));
+                addLog(`${enemy.name} réplique : -${dmg} HP`);
+                if(pHp - dmg <= 0) {
+                    addLog("CRITICAL FAILURE. Retraite forcée.");
+                    setTimeout(onExit, 2000);
+                } else {
+                    setTurn('PLAYER');
+                }
+            };
+
+            return (
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col items-center justify-center min-h-[400px]">
+                    <div className="w-full glass p-6 rounded-3xl border-2 border-pink-500 relative mb-12">
+                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-6xl">{enemy.icon}</div>
+                        <div className="text-center font-black text-pink-500 mb-2">{enemy.name}</div>
+                        <div className="w-full h-4 bg-black rounded-full border border-pink-500/30 overflow-hidden">
+                            <div className="hp-bar h-full bg-pink-500 shadow-[0_0_10px_#ff0055]" style={{width: `${(eHp/enemy.hp)*100}%`}}></div>
                         </div>
                     </div>
-                ))}
-            </motion.div>
-        );
 
-        const AvatarCatalog = ({ db, setDb, playSfx }) => (
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="grid grid-cols-2 gap-3">
-                {AVATARS.map(a => {
-                    const isUnlocked = db.unlockedAvatars.includes(a.id);
-                    const isEquipped = db.avatar === a.icon;
-                    return (
-                        <div key={a.id} className={`glass p-4 rounded-2xl flex flex-col items-center text-center transition-all ${isEquipped ? 'border-cyan-500 shadow-[0_0_15px_rgba(0,243,255,0.2)]' : ''}`}>
-                            <div className="text-4xl mb-2">{a.icon}</div>
-                            <div className="font-o text-[10px] mb-1">{a.name}</div>
-                            <div className="text-[8px] text-gray-500 uppercase mb-3">{a.perk}</div>
-                            {!isUnlocked ? (
+                    <div className="text-2xl font-black mb-12 text-white">VS</div>
+
+                    <div className="w-full glass p-6 rounded-3xl border-2 border-cyan-500 relative">
+                         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-6xl">{db.avatar}</div>
+                         <div className="text-center font-black text-cyan-500 mb-2">{db.user}</div>
+                         <div className="w-full h-4 bg-black rounded-full border border-cyan-500/30 overflow-hidden">
+                            <div className="hp-bar h-full bg-cyan-500 shadow-[0_0_10px_#00f3ff]" style={{width: `${pHp}%`}}></div>
+                        </div>
+                    </div>
+
+                    <div className="mt-12 w-full">
+                        <button onClick={attack} disabled={turn !== 'PLAYER' || eHp <= 0} className={`w-full py-5 cyber-btn font-black ${turn === 'PLAYER' ? 'bg-white text-black' : 'bg-gray-800 text-gray-500'}`}>
+                            {turn === 'PLAYER' ? 'EXECUTER_ATTAQUE' : 'SYNCHRONISATION...'}
+                        </button>
+                    </div>
+                </motion.div>
+            );
+        };
+
+        const Shop = ({ db, setDb, playSfx }) => (
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-6">
+                 <h2 className="text-center text-[10px] text-violet-500 tracking-[0.5em] mb-4 uppercase">// Black_Market_Node</h2>
+                 
+                 <div className="space-y-4">
+                    <h3 className="text-xs text-white/40 border-b border-white/5 pb-2 uppercase tracking-widest">Implants_Sujets</h3>
+                    {IMPLANTS.map(imp => (
+                        <div key={imp.id} className="glass p-4 rounded-xl flex justify-between items-center group">
+                            <div className="flex gap-4 items-center">
+                                <div className="text-2xl p-2 bg-white/5 rounded-lg">{imp.icon}</div>
+                                <div>
+                                    <div className="text-xs font-bold">{imp.name}</div>
+                                    <div className="text-[10px] text-cyan-500">+{imp.bonus}% {imp.stat}</div>
+                                </div>
+                            </div>
+                            <button onClick={() => {
+                                if(db.creds >= imp.price) {
+                                    setDb(p => ({ ...p, creds: p.creds - imp.price, inventory: [...p.inventory, imp.id] }));
+                                    playSfx('level');
+                                } else playSfx('error');
+                            }} className="px-4 py-2 border border-violet-500 text-violet-500 rounded font-black text-[10px] hover:bg-violet-500 hover:text-white transition-all">
+                                {db.inventory.includes(imp.id) ? 'INSTALLÉ' : `${imp.price}₡`}
+                            </button>
+                        </div>
+                    ))}
+                 </div>
+
+                 <div className="space-y-4 pt-6">
+                    <h3 className="text-xs text-white/40 border-b border-white/5 pb-2 uppercase tracking-widest">Skins_Neural</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {AVATARS.map(a => (
+                            <div key={a.id} className="glass p-4 rounded-xl text-center flex flex-col items-center">
+                                <div className="text-3xl mb-2">{a.icon}</div>
+                                <div className="text-[10px] font-bold mb-1 uppercase">{a.name}</div>
                                 <button onClick={() => {
-                                    if(db.trophies >= a.cost) {
-                                        setDb(p => ({...p, trophies: p.trophies - a.cost, unlockedAvatars: [...p.unlockedAvatars, a.id]}));
-                                    } else alert("CREDITS INSUFFISANTS");
-                                }} className="w-full py-1 bg-pink-500/20 text-pink-500 text-[9px] font-bold rounded border border-pink-500/50">
-                                    BUY {a.cost}
+                                    if(db.unlocked.includes(a.id)) {
+                                        setDb(p => ({...p, avatar: a.icon, avatarName: a.name}));
+                                    } else if(db.creds >= a.cost) {
+                                        setDb(p => ({ ...p, creds: p.creds - a.cost, unlocked: [...p.unlocked, a.id] }));
+                                    }
+                                }} className={`w-full py-1 text-[8px] rounded border ${db.unlocked.includes(a.id) ? 'border-cyan-500 text-cyan-500' : 'border-pink-500 text-pink-500'}`}>
+                                    {db.unlocked.includes(a.id) ? (db.avatar === a.icon ? 'EQUIPPED' : 'USE') : `BUY ${a.cost}₡`}
                                 </button>
-                            ) : (
-                                <button onClick={() => setDb(p => ({...p, avatar: a.icon, avatarName: a.name}))} className={`w-full py-1 text-[9px] font-bold rounded ${isEquipped ? 'bg-cyan-500 text-black' : 'bg-white/10 text-white'}`}>
-                                    {isEquipped ? 'ACTIVE' : 'EQUIP'}
-                                </button>
-                            )}
-                        </div>
-                    );
-                })}
-            </motion.div>
-        );
-
-        const Settings = ({ db, setDb, onDownload }) => (
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-4">
-                 <div className="text-[10px] font-black text-violet-500 tracking-[0.3em] mb-4 uppercase text-center">// Parametres_Systeme</div>
-                 <div className="glass p-6 rounded-3xl space-y-6">
-                    <div className="flex justify-between items-center">
-                        <span className="font-o text-[10px] tracking-widest">BRUITAGES_SFX</span>
-                        <button onClick={() => setDb(p => ({...p, settings: {...p.settings, sfx: !p.settings.sfx}}))} className={`w-12 h-6 rounded-full transition-all flex items-center px-1 ${db.settings.sfx ? 'bg-cyan-500' : 'bg-gray-800'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full transition-all ${db.settings.sfx ? 'translate-x-6' : ''}`}></div>
-                        </button>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="font-o text-[10px] tracking-widest">SYNTH_WAVE_MUSIC</span>
-                        <button onClick={() => setDb(p => ({...p, settings: {...p.settings, music: !p.settings.music}}))} className={`w-12 h-6 rounded-full transition-all flex items-center px-1 ${db.settings.music ? 'bg-cyan-500' : 'bg-gray-800'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full transition-all ${db.settings.music ? 'translate-x-6' : ''}`}></div>
-                        </button>
-                    </div>
-                    <div className="pt-6 border-t border-white/5">
-                        <button onClick={onDownload} className="w-full py-4 bg-violet-500/20 border border-violet-500/50 text-violet-400 font-o text-[10px] rounded-xl mb-4 hover:bg-violet-500 hover:text-white transition-all">
-                            EXPORT_AS_.EXE_WRAPPER
-                        </button>
-                        <button onClick={() => { if(confirm("RESET TOTAL ?")) { localStorage.clear(); location.reload(); }}} className="w-full text-red-500/50 text-[8px] font-bold tracking-[0.3em] uppercase">
-                            [ Formater_Memoire_Centrale ]
-                        </button>
+                            </div>
+                        ))}
                     </div>
                  </div>
-                 <div className="p-4 text-center text-gray-600 text-[8px] uppercase tracking-widest">Fitness Quest v15.0.2 - Protocol OMNI active</div>
             </motion.div>
         );
 
-        const Setup = ({ onComplete }) => {
-            const [step, setStep] = useState(0);
-            const [name, setName] = useState("");
-            return (
-                <div className="h-screen flex items-center justify-center p-6 bg-[#030308]">
-                    <div className="glass p-8 rounded-[40px] w-full max-w-sm border-t-4 border-cyan-500 relative">
-                        {step === 0 ? (
-                            <motion.div initial={{opacity:0}} animate={{opacity:1}}>
-                                <h2 className="font-o text-cyan-400 text-xl mb-2">IDENTIFICATION</h2>
-                                <p className="text-[10px] text-gray-500 mb-8 tracking-widest uppercase">Liaison neurale requise</p>
-                                <input autoFocus type="text" onChange={(e) => setName(e.target.value)} placeholder="NOM..." className="w-full bg-cyan-500/5 border-b border-cyan-500/30 p-4 font-o text-white mb-10 outline-none uppercase" />
-                                <button onClick={() => name && setStep(1)} className="w-full py-5 bg-cyan-500 text-black font-o text-xs cyber-btn">INITIALISER</button>
-                            </motion.div>
-                        ) : (
-                            <motion.div initial={{opacity:0}} animate={{opacity:1}}>
-                                <h2 className="font-o text-cyan-400 text-xl mb-6 uppercase">Repos</h2>
-                                <div className="grid grid-cols-2 gap-2 mb-10">
-                                    {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map(d => (
-                                        <button key={d} className="p-3 text-[10px] border border-white/10 rounded-lg font-bold text-gray-500 hover:border-cyan-500 hover:text-cyan-500 uppercase">{d}</button>
-                                    ))}
-                                </div>
-                                <button onClick={() => onComplete({user: name.toUpperCase()})} className="w-full py-5 bg-cyan-500 text-black font-o text-xs cyber-btn">ENTRER_DANS_LE_FLUX</button>
-                            </motion.div>
-                        )}
+        const Config = ({ db, setDb }) => (
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-6">
+                <div className="glass p-8 rounded-[40px] space-y-8">
+                    <div className="flex justify-between items-center">
+                        <span className="text-[10px] tracking-[0.2em]">AUDIO_FEEDBACK</span>
+                        <button onClick={() => setDb(p => ({...p, settings: {...p.settings, sfx: !p.settings.sfx}}))} className={`w-14 h-6 rounded-full p-1 transition-all ${db.settings.sfx ? 'bg-cyan-500' : 'bg-white/10'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transition-all ${db.settings.sfx ? 'translate-x-8' : ''}`} />
+                        </button>
                     </div>
+
+                    <div className="pt-8 border-t border-white/5">
+                        <div className="text-[10px] text-gray-500 mb-4 uppercase text-center">Gestion de l'Archive</div>
+                        <button onClick={() => {
+                            const blob = new Blob([JSON.stringify(db)], {type: 'application/json'});
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `NEURAL_SAVE_${db.user}.json`;
+                            a.click();
+                        }} className="w-full py-4 border border-white/10 rounded-xl text-[10px] font-bold mb-4 hover:bg-white/5">EXPORTER_SAVE.BIN</button>
+                        
+                        <button onClick={() => {
+                            if(confirm("EFFACER LA MÉMOIRE NEURALE ?")) {
+                                localStorage.removeItem('FQ_V16_ULTRA');
+                                window.location.reload();
+                            }
+                        }} className="w-full py-4 text-red-500 text-[8px] font-black tracking-widest border border-red-500/20 rounded-xl">WIPE_SYSTEM_CORE</button>
+                    </div>
+                </div>
+                <div className="text-center text-[8px] text-white/20 uppercase tracking-[0.5em]">Fitness Quest v16.4.0 // Build 2024.X</div>
+            </motion.div>
+        );
+
+        const Auth = ({ onDone }) => {
+            const [val, setVal] = useState("");
+            return (
+                <div className="h-screen flex items-center justify-center p-8">
+                    <motion.div initial={{y:20, opacity:0}} animate={{y:0, opacity:1}} className="glass p-10 rounded-[50px] w-full border-t-4 border-cyan-500">
+                        <h1 className="font-o text-2xl text-cyan-400 mb-2">IDENT_LOGIN</h1>
+                        <p className="text-[10px] text-gray-500 mb-10 tracking-[0.3em] uppercase">Entrez votre code neural</p>
+                        <input autoFocus type="text" value={val} onChange={(e) => setVal(e.target.value.toUpperCase())} placeholder="OPERATOR_NAME..." className="w-full bg-white/5 border-b-2 border-cyan-500 p-4 font-o text-white mb-10 outline-none tracking-widest" />
+                        <button onClick={() => val && onDone(val)} className="w-full py-5 bg-cyan-500 text-black font-o text-xs cyber-btn font-black">INITIALISER_LA_LIAISON</button>
+                    </motion.div>
                 </div>
             );
         };
