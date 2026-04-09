@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FITNESS QUEST - V16 - OMNI PROTOCOL</title>
+    <title>FITNESS QUEST - OMNI V14 - ULTIMATE</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -13,32 +13,72 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --cyan: #00f3ff; --pink: #ff0055; --violet: #bc13fe; --dark: #030308; --gold: #ffda08; }
-        body { background: var(--dark); color: #fff; font-family: 'Rajdhani', sans-serif; overflow: hidden; height: 100vh; }
-        .font-o { font-family: 'Orbitron', sans-serif; }
-        
-        /* Background & Effects */
-        .grid-bg { position: fixed; inset: 0; z-index: -1; background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(60deg) translateY(-100px); animation: grid-move 20s linear infinite; }
-        @keyframes grid-move { from { background-position: 0 0; } to { background-position: 0 50px; } }
-        
-        .glass { background: rgba(10, 10, 25, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(0, 243, 255, 0.1); }
-        .cyber-border { border-left: 4px solid var(--cyan); clip-path: polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%); }
-        .cyber-btn { clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); transition: 0.2s; position: relative; overflow: hidden; }
-        .cyber-btn::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); animation: sheen 3s infinite; }
-        @keyframes sheen { 100% { left: 100%; } }
-        
-        .glitch-text { animation: glitch 2s infinite; }
-        @keyframes glitch { 
-            0% { text-shadow: 2px 0 var(--pink), -2px 0 var(--cyan); }
-            1% { text-shadow: -2px 0 var(--pink), 2px 0 var(--cyan); }
-            2% { text-shadow: 0 0 white; }
+        /* --- DESIGN SYSTEM CYBERPUNK --- */
+        :root { 
+            --cyan: #00f3ff; 
+            --pink: #ff0055; 
+            --violet: #bc13fe; 
+            --dark-bg: #030308;
+            --glass: rgba(10, 10, 25, 0.98);
         }
 
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .scanline { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: rgba(0,243,255,0.1); animation: scan 3s linear infinite; pointer-events: none; z-index: 100; }
-        @keyframes scan { to { top: 100%; } }
+        body { 
+            background: var(--dark-bg); 
+            color: #ffffff; 
+            font-family: 'Rajdhani', sans-serif; 
+            overflow: hidden; 
+            height: 100vh; 
+            user-select: none;
+        }
 
-        .hp-bar { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .font-o { font-family: 'Orbitron', sans-serif; }
+
+        /* ANIMATED CYBER GRID BACKGROUND */
+        .grid-bg {
+            position: fixed; inset: 0; z-index: -1;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), 
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px; 
+            transform: perspective(600px) rotateX(60deg) translateY(-100px);
+            animation: grid-scroll 20s linear infinite;
+        }
+
+        @keyframes grid-scroll {
+            from { background-position: 0 0; }
+            to { background-position: 0 50px; }
+        }
+
+        /* UI ELEMENTS */
+        .glass-panel { 
+            background: var(--glass); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .cyber-button {
+            clip-path: polygon(12% 0, 100% 0, 100% 70%, 88% 100%, 0 100%, 0 30%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cyber-button:active { transform: scale(0.94); filter: brightness(1.3); }
+
+        .scanline {
+            width: 100%; height: 2px;
+            background: rgba(0, 243, 255, 0.1);
+            position: absolute;
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan { from { top: 0%; } to { top: 100%; } }
+
+        /* RADIO VISUALIZER */
+        .vis-bar { width: 3px; background: var(--cyan); border-radius: 2px; }
+        @keyframes bounce { 0%, 100% { height: 4px; } 50% { height: 18px; } }
+        .active-vis { animation: bounce 0.6s infinite ease-in-out; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
@@ -46,370 +86,334 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        /**
+         * FITNESS QUEST OMNI V14 - ULTIMATE
+         */
+
         const { useState, useEffect, useMemo, useRef } = React;
         const { motion, AnimatePresence } = window.Motion;
 
-        // --- CONSTANTES & DATA ---
-        const AVATARS = [
-            { id: "a1", icon: "🦾", name: "IRON-CLAD", perk: "FORCE +15%", cost: 0, desc: "Ancien tank de la zone industrielle." },
-            { id: "a2", icon: "🧬", name: "BIO-HAZARD", perk: "REGEN +20%", cost: 0, desc: "Mutant optimisé par nanomachines." },
-            { id: "a3", icon: "⚡", name: "NEON-STRIKE", perk: "SPEED +10%", cost: 150, desc: "Infiltrateur des quartiers hauts." },
-            { id: "a4", icon: "🥷", name: "GHOST-VOID", perk: "CRIT +25%", cost: 300, desc: "Une ombre dans le flux de données." },
-            { id: "a5", icon: "👹", name: "ONI-PULSE", perk: "EXP X2", cost: 600, desc: "Démon du noyau central." }
+        // --- DATA MATRICES ---
+        const DAYS_FULL = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+        const AVATAR_LIST = [
+            { id: "a1", icon: "🦾", name: "CYBORG", perk: "+5% Force" },
+            { id: "a2", icon: "🧬", name: "BIO-HACKER", perk: "+5% Récup" },
+            { id: "a3", icon: "⚡", name: "RUNNER", perk: "+5% Agilité" },
+            { id: "a4", icon: "🥷", name: "GHOST", perk: "+5% Endurance" }
         ];
 
-        const IMPLANTS = [
-            { id: 'i1', name: "Neural Link", price: 80, stat: "XP", bonus: 5, icon: "🧠" },
-            { id: 'i2', name: "Titan Fibers", price: 120, stat: "ATK", bonus: 10, icon: "🦴" },
-            { id: 'i3', name: "Ocular HUD", price: 200, stat: "CRIT", bonus: 15, icon: "👁️" }
-        ];
-
-        const ENEMIES = [
-            { name: "SCRAP-BOT", hp: 100, atk: 5, reward: 50, icon: "🤖" },
-            { name: "CYBER-STALKER", hp: 250, atk: 12, reward: 120, icon: "🕷️" },
-            { name: "ARCH-ADMIN", hp: 600, atk: 25, reward: 500, icon: "🔱" }
-        ];
-
-        const EXERCISES = {
-            PULL: ["Australiennes", "Pull-ups", "Chin-ups", "Muscle-ups"],
-            PUSH: ["Pompes", "Diamants", "Dips", "HSPU"],
-            LEGS: ["Squats", "Fentes", "Pistols", "Jump Squats"],
-            CORE: ["Planche", "L-Sit", "Hollow Hold", "V-Ups"]
+        const WORKOUT_DB = {
+            PULL: ["Australiennes", "Négatives", "Chin-ups", "Classiques", "Large Grip", "Lestées"],
+            PUSH: ["Pompes Genoux", "Inclinaison", "Classiques", "Diamant", "Archer", "Pseudo-Planche"],
+            DIPS: ["Dips Chaise", "Dips Banc", "Dips Négatifs", "Dips Barres", "Dips Profonds", "Dips Lestés"],
+            LEGS: ["Squat", "Fentes", "Fentes Bulgares", "Side Squat", "Jump Squat", "Pistol Squat"]
         };
 
-        // --- COMPOSANTS PRINCIPAUX ---
+        const SHOP_ITEMS = [
+            { id: 's1', name: "SÉRUM ALPHA", desc: "+10% XP Permanent", price: 20, type: 'buff' },
+            { id: 's2', name: "CORE RECHARGE", desc: "Reset limite session (1x)", price: 45, type: 'action' },
+            { id: 's3', name: "INTERFACE VIOLET", desc: "HUD Customization", price: 35, type: 'skin' },
+            { id: 's4', name: "PÉPITE FORCE", desc: "+2 Power Levels", price: 15, type: 'stat' }
+        ];
 
         const App = () => {
-            const [view, setView] = useState('hub'); // hub, train, combat, shop, config
+            const [view, setView] = useState('train');
+            const [setupStep, setSetupStep] = useState(0);
+            const [tasks, setTasks] = useState({});
+            const [radioActive, setRadioActive] = useState(false);
+            const audioRef = useRef(null);
+
             const [db, setDb] = useState(() => {
-                const save = localStorage.getItem('FQ_V16_ULTRA');
-                return save ? JSON.parse(save) : {
-                    user: null, avatar: "🦾", avatarName: "IRON-CLAD",
-                    lvl: 1, xp: 0, creds: 50, power: 10,
-                    inventory: [], logs: ["Système initialisé..."],
-                    stats: { reps: 0, wins: 0, days: 0 },
-                    settings: { sfx: true, music: false },
-                    unlocked: ["a1", "a2"]
+                const saved = localStorage.getItem('FQ_V14_CORE');
+                return saved ? JSON.parse(saved) : {
+                    user: null, avatar: "🦾", avatarName: "CYBORG",
+                    level: 1, xp: 0, trophies: 0, power: 10,
+                    startDate: Date.now(),
+                    lastDate: new Date().toDateString(),
+                    restDays: [],
+                    dailySessions: 0,
+                    inventory: [],
+                    totalSessions: 0
                 };
             });
 
             useEffect(() => {
-                localStorage.setItem('FQ_V16_ULTRA', JSON.stringify(db));
+                localStorage.setItem('FQ_V14_CORE', JSON.stringify(db));
+                const today = new Date().toDateString();
+                if (db.lastDate !== today) {
+                    setDb(prev => ({ 
+                        ...prev, 
+                        lastDate: today, 
+                        dailySessions: 0 
+                    }));
+                }
             }, [db]);
 
-            const addLog = (msg) => {
-                const time = new Date().toLocaleTimeString();
-                setDb(p => ({ ...p, logs: [`[${time}] ${msg}`, ...p.logs].slice(0, 10) }));
+            const fitnessLevel = useMemo(() => {
+                const diff = Math.floor((Date.now() - db.startDate) / (1000 * 60 * 60 * 24 * 30));
+                return Math.min(diff, 5);
+            }, [db.startDate]);
+
+            const isRestDay = useMemo(() => {
+                const todayIdx = (new Date().getDay() + 6) % 7;
+                return db.restDays.includes(DAYS_FULL[todayIdx]);
+            }, [db.restDays]);
+
+            const handleTask = (id) => setTasks(p => ({ ...p, [id]: !p[id] }));
+
+            const finalizeSession = () => {
+                if (db.dailySessions >= 2) return;
+                if (Object.keys(tasks).filter(k => tasks[k]).length < 4) return;
+
+                setDb(prev => {
+                    let newXp = prev.xp + 35;
+                    let newLvl = prev.level;
+                    let newPower = prev.power;
+                    if (newXp >= 100) { 
+                        newLvl++; 
+                        newXp = 0; 
+                        newPower += 1;
+                    }
+                    return {
+                        ...prev,
+                        xp: newXp,
+                        level: newLvl,
+                        power: newPower,
+                        trophies: prev.trophies + 8,
+                        dailySessions: prev.dailySessions + 1,
+                        totalSessions: prev.totalSessions + 1
+                    };
+                });
+                setTasks({});
+                alert("TRANSMISSION RÉUSSIE. SYSTÈME MIS À JOUR. +8 TROPHÉES.");
             };
 
-            const playSfx = (type) => {
-                if(!db.settings.sfx) return;
-                const sounds = {
-                    click: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3",
-                    level: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3",
-                    error: "https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3"
-                };
-                new Audio(sounds[type] || sounds.click).play().catch(()=>{});
+            const buyItem = (item) => {
+                if (db.trophies < item.price) return alert("CRÉDITS INSUFFISANTS");
+                if (item.id === 's2') {
+                    setDb(prev => ({ ...prev, dailySessions: 0, trophies: prev.trophies - item.price }));
+                    return alert("CORE RECHARGÉ : LIMITES RÉINITIALISÉES.");
+                }
+                setDb(prev => ({
+                    ...prev,
+                    trophies: prev.trophies - item.price,
+                    inventory: [...prev.inventory, item.id],
+                    power: item.type === 'stat' ? prev.power + 2 : prev.power
+                }));
+                alert(`SYNCHRONISATION DE ${item.name} RÉUSSIE.`);
             };
 
-            if (!db.user) return <Auth onDone={(name) => setDb(p => ({...p, user: name}))} />;
+            if (!db.user) return (
+                <div className="h-screen flex items-center justify-center p-6">
+                    <div className="glass-panel p-8 rounded-[40px] w-full max-w-sm border-t-4 border-cyan-500 relative overflow-hidden">
+                        <div className="scanline"></div>
+                        {setupStep === 0 && (
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}}>
+                                <h2 className="font-o text-cyan-400 text-xl mb-2 tracking-tighter">REGISTRE_PILOTE</h2>
+                                <p className="text-[10px] text-gray-500 mb-8 uppercase tracking-widest">Entrez votre identifiant de réseau</p>
+                                <input id="name-input" type="text" placeholder="NOM..." className="w-full bg-cyan-500/5 border-b border-cyan-500/30 p-4 font-o text-white mb-10 outline-none focus:border-cyan-500 uppercase" />
+                                <button onClick={() => {
+                                    const val = document.getElementById('name-input').value;
+                                    if(val) { setDb(p=>({...p, user: val.toUpperCase()})); setSetupStep(1); }
+                                }} className="w-full py-5 bg-cyan-500 text-black font-black font-o text-xs tracking-widest cyber-button">CONTINUER</button>
+                            </motion.div>
+                        )}
+                        {setupStep === 1 && (
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}}>
+                                <h2 className="font-o text-cyan-400 text-xl mb-6 tracking-tighter">CHOIX_AVATAR</h2>
+                                <div className="grid grid-cols-2 gap-3 mb-10">
+                                    {AVATAR_LIST.map(a => (
+                                        <button key={a.id} onClick={() => { setDb(p=>({...p, avatar: a.icon, avatarName: a.name})); setSetupStep(2); }} className="glass-panel p-4 rounded-2xl hover:border-cyan-500 transition-all text-left">
+                                            <div className="text-3xl mb-2">{a.icon}</div>
+                                            <div className="text-[10px] font-black text-cyan-500 uppercase">{a.name}</div>
+                                            <div className="text-[8px] text-gray-500 uppercase">{a.perk}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                        {setupStep === 2 && (
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}}>
+                                <h2 className="font-o text-cyan-400 text-xl mb-2 tracking-tighter">PROTOCOLE_REPOS</h2>
+                                <p className="text-[10px] text-gray-500 mb-6 uppercase tracking-widest">Sélectionnez 3 jours de maintenance</p>
+                                <div className="grid grid-cols-2 gap-2 mb-10">
+                                    {DAYS_FULL.map(d => (
+                                        <button key={d} onClick={() => {
+                                            const current = db.restDays;
+                                            const next = current.includes(d) ? current.filter(x=>x!==d) : (current.length < 3 ? [...current, d] : current);
+                                            setDb(p=>({...p, restDays: next}));
+                                        }} className={`p-3 text-[10px] font-bold rounded-lg border transition-all ${db.restDays.includes(d) ? 'bg-cyan-500 border-cyan-500 text-black' : 'border-white/10 text-gray-400'}`}>
+                                            {d.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button disabled={db.restDays.length !== 3} onClick={() => location.reload()} className="w-full py-5 bg-cyan-500 text-black font-black font-o text-xs cyber-button disabled:opacity-20">INITIALISER_CORE</button>
+                            </motion.div>
+                        )}
+                    </div>
+                </div>
+            );
 
             return (
-                <div className="max-w-md mx-auto h-screen flex flex-col p-4 relative overflow-hidden font-o">
-                    <div className="scanline"></div>
-                    
-                    {/* UI HEADER */}
-                    <header className="glass p-4 rounded-xl border-b-2 border-cyan-500 mb-4 flex justify-between items-center relative overflow-hidden">
-                        <div className="flex items-center gap-3">
-                            <div className="text-3xl drop-shadow-[0_0_8px_cyan]">{db.avatar}</div>
+                <div className="max-w-md mx-auto h-screen flex flex-col p-4 relative">
+                    <audio ref={audioRef} loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" />
+
+                    {/* HEADER STATUS */}
+                    <header className="glass-panel p-4 rounded-3xl mb-4 border-l-4 border-cyan-500 flex justify-between items-center">
+                        <div className="flex gap-4 items-center">
+                            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-3xl border border-white/10">
+                                {db.avatar}
+                            </div>
                             <div>
-                                <div className="text-[10px] text-cyan-400 font-black tracking-widest">{db.user}</div>
-                                <div className="text-[14px] text-white leading-none">LVL {db.lvl}</div>
-                                <div className="w-24 h-1 bg-white/10 mt-1 rounded-full overflow-hidden">
-                                    <motion.div className="h-full bg-cyan-500" initial={{width:0}} animate={{width: `${db.xp}%`}} />
+                                <h2 className="font-o text-lg tracking-tighter leading-none">{db.user}</h2>
+                                <p className="text-[8px] font-black text-cyan-500 tracking-[0.3em] mt-1">{db.avatarName}_UNIT</p>
+                                <div className="flex gap-2 mt-2">
+                                    <span className="text-[8px] bg-cyan-500/10 px-2 py-0.5 rounded text-cyan-400 font-bold uppercase">LVL {db.level}</span>
+                                    <span className="text-[8px] bg-violet-500/10 px-2 py-0.5 rounded text-violet-400 font-bold uppercase">PWR {db.power}</span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-pink-500 font-bold">{db.creds} ₡</div>
-                            <div className="text-[8px] text-gray-500">CREDITS_NODE</div>
+                            <div className="font-o text-2xl tracking-tighter">{db.trophies}🏆</div>
+                            <div className="text-[8px] text-gray-500 font-black tracking-widest">CRÉDITS_RÉSEAU</div>
                         </div>
                     </header>
 
-                    {/* VUES DYNAMIQUES */}
+                    {/* CYBER RADIO */}
+                    <div className="glass-panel px-5 py-3 rounded-2xl mb-4 flex items-center justify-between border-violet-500/20">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => { radioActive ? audioRef.current.pause() : audioRef.current.play(); setRadioActive(!radioActive); }} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-cyan-500 border border-cyan-500/20">
+                                {radioActive ? 'Ⅱ' : '▶'}
+                            </button>
+                            <div>
+                                <p className="text-[9px] font-o text-violet-400 tracking-widest">NEON_FREQUENCY_FM</p>
+                                <p className="text-[7px] text-gray-600 uppercase">Stream : Synthwave_Radio_Alpha</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-1 items-end h-4">
+                            {[1,2,3,4,5,6].map(i => (
+                                <div key={i} className={`vis-bar ${radioActive ? 'active-vis' : ''}`} style={{animationDelay: `${i*0.1}s`}} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* XP PROGRESS */}
+                    <div className="px-2 mb-6">
+                        <div className="flex justify-between text-[8px] font-black mb-1 text-gray-500 uppercase tracking-widest">
+                            <span>Surcharge_Niveau</span>
+                            <span>{db.xp}%</span>
+                        </div>
+                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
+                            <motion.div animate={{width: `${db.xp}%`}} className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_10px_#00f3ff]" />
+                        </div>
+                    </div>
+
+                    {/* MAIN HUD CONTENT */}
                     <main className="flex-1 overflow-y-auto no-scrollbar pb-24">
                         <AnimatePresence mode="wait">
-                            {view === 'hub' && <Hub db={db} setView={setView} />}
-                            {view === 'train' && <Workout db={db} setDb={setDb} addLog={addLog} playSfx={playSfx} />}
-                            {view === 'combat' && <Combat db={db} setDb={setDb} addLog={addLog} onExit={() => setView('hub')} />}
-                            {view === 'shop' && <Shop db={db} setDb={setDb} playSfx={playSfx} />}
-                            {view === 'config' && <Config db={db} setDb={setDb} />}
+                            {view === 'train' && (
+                                <motion.div key="t" initial={{opacity:0, x:-10}} animate={{opacity:1, x:0}} exit={{opacity:0, x:10}}>
+                                    {db.dailySessions >= 2 ? (
+                                        <div className="glass-panel p-12 rounded-[40px] text-center border-red-500/30">
+                                            <div className="text-6xl mb-6 grayscale opacity-50">🚫</div>
+                                            <h3 className="font-o text-red-500 text-lg mb-2">ACCÈS_REFUSÉ</h3>
+                                            <p className="text-xs text-gray-500 leading-relaxed uppercase tracking-tighter">Limite de sécurité atteinte (2/2). Revenez après le prochain cycle de 24h.</p>
+                                        </div>
+                                    ) : isRestDay ? (
+                                        <div className="glass-panel p-12 rounded-[40px] text-center border-violet-500/30">
+                                            <div className="text-6xl mb-6">🔋</div>
+                                            <h3 className="font-o text-violet-400 text-lg mb-2">MAINTENANCE_EN_COURS</h3>
+                                            <p className="text-xs text-gray-500 leading-relaxed uppercase tracking-tighter">Jour de repos détecté. Ton système nerveux se recalibre. Profite du calme.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center mb-4 px-1">
+                                                <h3 className="text-[10px] font-black text-cyan-500 tracking-[0.3em] uppercase underline underline-offset-8">Missions_Physiques_M{fitnessLevel+1}</h3>
+                                                <span className={`text-[9px] font-o ${db.dailySessions === 1 ? 'text-orange-500' : 'text-gray-500'}`}>SESSION_{db.dailySessions+1}/2</span>
+                                            </div>
+                                            {Object.entries(WORKOUT_DB).map(([cat, list], i) => (
+                                                <div key={cat} onClick={() => handleTask(cat)} className={`glass-panel p-5 rounded-2xl flex justify-between items-center transition-all ${tasks[cat] ? 'bg-cyan-500/10 border-cyan-500/40' : 'opacity-60 border-white/5'}`}>
+                                                    <div>
+                                                        <div className="text-[7px] font-black text-violet-500 uppercase mb-1">{cat}_MODULE</div>
+                                                        <div className="font-o text-sm tracking-tight text-white">{list[fitnessLevel]}</div>
+                                                        <div className="text-[9px] text-gray-500 mt-1 uppercase">Objectif : <span className="text-white">{cat === 'LEGS' ? (20 + (db.power - 10)) : (10 + Math.floor((db.power - 10)/2))} Reps</span></div>
+                                                    </div>
+                                                    <div className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${tasks[cat] ? 'bg-cyan-500 border-white text-black font-black' : 'border-white/10'}`}>
+                                                        {tasks[cat] && '✓'}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <button onClick={finalizeSession} className={`w-full py-6 mt-4 cyber-button font-black tracking-[0.5em] text-[10px] ${Object.keys(tasks).filter(k=>tasks[k]).length >= 4 ? 'bg-white text-black' : 'bg-white/5 text-gray-700 pointer-events-none'}`}>
+                                                TRANSFÉRER_DONNÉES_SÉANCE
+                                            </button>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+
+                            {view === 'shop' && (
+                                <motion.div key="s" initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} className="grid grid-cols-2 gap-3">
+                                    <div className="col-span-2 text-[10px] font-black text-pink-500 tracking-[0.3em] uppercase mb-2 px-1">// MARCHÉ_NOIR_SYSTEM</div>
+                                    {SHOP_ITEMS.map(item => (
+                                        <div key={item.id} className="glass-panel p-4 rounded-2xl border-pink-500/20 flex flex-col justify-between h-44">
+                                            <div>
+                                                <div className="text-[7px] text-pink-500 font-black uppercase mb-1">{item.type}</div>
+                                                <h4 className="font-o text-[10px] text-white leading-tight mb-2">{item.name}</h4>
+                                                <p className="text-[9px] text-gray-500 leading-tight font-bold uppercase">{item.desc}</p>
+                                            </div>
+                                            <button onClick={() => buyItem(item)} className="w-full py-2 bg-pink-500/10 border border-pink-500/50 text-pink-500 text-[9px] font-o rounded-lg hover:bg-pink-500 hover:text-white transition-all">
+                                                {item.price} 🏆
+                                            </button>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+
+                            {view === 'stats' && (
+                                <motion.div key="st" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-4">
+                                    <div className="glass-panel p-8 rounded-[40px] text-center border-b-2 border-cyan-500">
+                                        <div className="w-20 h-20 mx-auto mb-6 bg-white/5 rounded-3xl flex items-center justify-center text-4xl border border-white/10">
+                                            {db.avatar}
+                                        </div>
+                                        <h3 className="font-o text-2xl mb-1">{db.user}</h3>
+                                        <p className="text-[10px] text-cyan-500 font-black tracking-widest uppercase mb-8">Niveau_D'accès_Global</p>
+                                        
+                                        <div className="grid grid-cols-2 gap-4 text-left">
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Sessions_Total</div>
+                                                <div className="font-o text-lg">{db.totalSessions}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Jours_Repos</div>
+                                                <div className="font-o text-[9px] mt-1">{db.restDays.join(', ')}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Mois_Service</div>
+                                                <div className="font-o text-lg">0{fitnessLevel+1}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <div className="text-[7px] text-gray-500 uppercase font-bold mb-1">Power_Index</div>
+                                                <div className="font-o text-lg text-violet-400">{db.power}</div>
+                                            </div>
+                                        </div>
+
+                                        <button onClick={() => { if(confirm("FORMATEZ TOUTES LES DONNÉES ?")) { localStorage.clear(); location.reload(); }}} className="mt-12 text-red-500/30 text-[8px] font-black tracking-[0.4em] hover:text-red-500 transition-colors uppercase">
+                                            [ RÉINITIALISER_SYSTÈME_CENTRAL ]
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
                         </AnimatePresence>
                     </main>
 
-                    {/* BARRE DE LOGS BASSE */}
-                    <div className="fixed bottom-24 left-4 right-4 h-12 glass rounded-lg border border-white/5 p-2 overflow-hidden pointer-events-none opacity-50">
-                        {db.logs.map((log, i) => (
-                            <div key={i} className="text-[8px] text-cyan-200/50 font-mono truncate">{log}</div>
-                        ))}
-                    </div>
-
-                    {/* NAVIGATION UNIFIÉE */}
-                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] glass rounded-2xl p-2 flex gap-1 z-50 border border-cyan-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                        {[
-                            {id: 'hub', label: 'NEURON', icon: '🏠'},
-                            {id: 'train', label: 'CYBER', icon: '🦾'},
-                            {id: 'combat', label: 'FIGHT', icon: '⚔️'},
-                            {id: 'shop', label: 'MODS', icon: '🔌'},
-                            {id: 'config', label: 'SYS', icon: '⚙️'}
-                        ].map(item => (
-                            <button key={item.id} onClick={() => { playSfx('click'); setView(item.id); }} className={`flex-1 py-3 rounded-xl transition-all flex flex-col items-center gap-1 ${view === item.id ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'text-gray-500'}`}>
-                                <span className="text-sm">{item.icon}</span>
-                                <span className="text-[8px] font-bold tracking-tighter">{item.label}</span>
+                    {/* DOCK NAV */}
+                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] glass-panel rounded-full p-2 flex gap-1 z-50 shadow-[0_10px_50px_rgba(0,0,0,0.9)] border-t border-white/10">
+                        {['train', 'shop', 'stats'].map(m => (
+                            <button key={m} onClick={() => setView(m)} className={`flex-1 py-3 rounded-full font-o text-[9px] tracking-widest transition-all ${view === m ? 'bg-cyan-500 text-black shadow-[0_0_20px_rgba(0,243,255,0.4)]' : 'text-gray-500 hover:text-white'}`}>
+                                {m.toUpperCase()}
                             </button>
                         ))}
                     </nav>
-                </div>
-            );
-        };
-
-        // --- SUB-VIEWS ---
-
-        const Hub = ({ db, setView }) => (
-            <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="glass p-4 rounded-xl border-l-2 border-pink-500">
-                        <div className="text-[10px] text-gray-400 uppercase">Power Level</div>
-                        <div className="text-2xl font-black text-pink-500">{db.power}</div>
-                    </div>
-                    <div className="glass p-4 rounded-xl border-l-2 border-violet-500">
-                        <div className="text-[10px] text-gray-400 uppercase">Total Reps</div>
-                        <div className="text-2xl font-black text-violet-500">{db.stats.reps}</div>
-                    </div>
-                </div>
-
-                <div className="glass p-6 rounded-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-2 opacity-10 text-6xl italic font-black">QUEST</div>
-                    <h3 className="text-cyan-400 text-sm mb-4 tracking-[0.2em]">MISSION_ACTUELLE</h3>
-                    <div className="p-4 border border-cyan-500/20 bg-cyan-500/5 rounded-lg">
-                        <p className="text-xs text-white leading-relaxed mb-4">Éliminer l'unité <span className="text-pink-500 font-bold">SCRAP-BOT</span> en utilisant 50 reps de puissance.</p>
-                        <button onClick={() => setView('train')} className="w-full py-3 cyber-btn bg-cyan-500 text-black text-[10px] font-black">DÉMARRER PROTOCOLE</button>
-                    </div>
-                </div>
-            </motion.div>
-        );
-
-        const Workout = ({ db, setDb, addLog, playSfx }) => {
-            const [active, setActive] = useState(null);
-            const [reps, setReps] = useState(0);
-
-            const complete = () => {
-                if (reps <= 0) return;
-                playSfx('level');
-                addLog(`Séquence ${active} terminée : +${reps} Reps`);
-                setDb(p => {
-                    let nextXp = p.xp + (reps * 2);
-                    let nextLvl = p.lvl;
-                    if(nextXp >= 100) { nextLvl++; nextXp = 0; }
-                    return {
-                        ...p,
-                        xp: nextXp, lvl: nextLvl,
-                        creds: p.creds + Math.floor(reps / 2),
-                        power: p.power + 1,
-                        stats: { ...p.stats, reps: p.stats.reps + reps }
-                    };
-                });
-                setReps(0); setActive(null);
-            };
-
-            return (
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-4">
-                    <h2 className="text-center text-[10px] text-cyan-500 tracking-[0.5em] mb-4 uppercase">// Training_Matrix</h2>
-                    
-                    {!active ? (
-                        <div className="grid grid-cols-1 gap-3">
-                            {Object.entries(EXERCISES).map(([cat, list]) => (
-                                <button key={cat} onClick={() => setActive(cat)} className="glass p-5 rounded-xl border border-white/5 flex justify-between items-center hover:border-cyan-500 transition-all group">
-                                    <span className="text-sm font-bold tracking-widest">{cat}</span>
-                                    <span className="text-xs text-cyan-500 group-hover:translate-x-2 transition-transform">SELECT >></span>
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="glass p-8 rounded-3xl text-center border-2 border-cyan-500 shadow-[0_0_20px_rgba(0,243,255,0.1)]">
-                            <div className="text-[10px] text-pink-500 mb-2 font-black uppercase tracking-widest">{active} MODULE ACTIVE</div>
-                            <div className="text-5xl font-black mb-8 glitch-text">{reps}</div>
-                            
-                            <div className="flex gap-4 mb-8">
-                                <button onClick={() => setReps(r => r + 1)} className="flex-1 py-8 bg-white/5 border border-white/10 rounded-2xl text-2xl active:bg-cyan-500 active:text-black">+</button>
-                                <button onClick={() => setReps(r => Math.max(0, r - 1))} className="flex-1 py-8 bg-white/5 border border-white/10 rounded-2xl text-2xl">-</button>
-                            </div>
-
-                            <div className="space-y-3">
-                                <button onClick={complete} className="w-full py-4 cyber-btn bg-cyan-500 text-black font-black text-xs">ENREGISTRER_DONNEES</button>
-                                <button onClick={() => setActive(null)} className="w-full py-2 text-[8px] text-gray-500 uppercase tracking-widest">Annuler la session</button>
-                            </div>
-                        </div>
-                    )}
-                </motion.div>
-            );
-        };
-
-        const Combat = ({ db, setDb, addLog, onExit }) => {
-            const enemy = ENEMIES[Math.min(db.lvl - 1, 2)];
-            const [eHp, setEHp] = useState(enemy.hp);
-            const [pHp, setPHp] = useState(100);
-            const [turn, setTurn] = useState('PLAYER');
-
-            const attack = () => {
-                if(turn !== 'PLAYER') return;
-                const dmg = db.power + Math.floor(Math.random() * 5);
-                setEHp(h => Math.max(0, h - dmg));
-                addLog(`Attaque : -${dmg} HP sur ${enemy.name}`);
-                
-                if(eHp - dmg <= 0) {
-                    addLog(`VICTOIRE ! +${enemy.reward} Credits`);
-                    setDb(p => ({ ...p, creds: p.creds + enemy.reward, stats: { ...p.stats, wins: p.stats.wins + 1 } }));
-                    setTimeout(onExit, 2000);
-                } else {
-                    setTurn('ENEMY');
-                    setTimeout(enemyTurn, 1000);
-                }
-            };
-
-            const enemyTurn = () => {
-                const dmg = enemy.atk;
-                setPHp(h => Math.max(0, h - dmg));
-                addLog(`${enemy.name} réplique : -${dmg} HP`);
-                if(pHp - dmg <= 0) {
-                    addLog("CRITICAL FAILURE. Retraite forcée.");
-                    setTimeout(onExit, 2000);
-                } else {
-                    setTurn('PLAYER');
-                }
-            };
-
-            return (
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col items-center justify-center min-h-[400px]">
-                    <div className="w-full glass p-6 rounded-3xl border-2 border-pink-500 relative mb-12">
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-6xl">{enemy.icon}</div>
-                        <div className="text-center font-black text-pink-500 mb-2">{enemy.name}</div>
-                        <div className="w-full h-4 bg-black rounded-full border border-pink-500/30 overflow-hidden">
-                            <div className="hp-bar h-full bg-pink-500 shadow-[0_0_10px_#ff0055]" style={{width: `${(eHp/enemy.hp)*100}%`}}></div>
-                        </div>
-                    </div>
-
-                    <div className="text-2xl font-black mb-12 text-white">VS</div>
-
-                    <div className="w-full glass p-6 rounded-3xl border-2 border-cyan-500 relative">
-                         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-6xl">{db.avatar}</div>
-                         <div className="text-center font-black text-cyan-500 mb-2">{db.user}</div>
-                         <div className="w-full h-4 bg-black rounded-full border border-cyan-500/30 overflow-hidden">
-                            <div className="hp-bar h-full bg-cyan-500 shadow-[0_0_10px_#00f3ff]" style={{width: `${pHp}%`}}></div>
-                        </div>
-                    </div>
-
-                    <div className="mt-12 w-full">
-                        <button onClick={attack} disabled={turn !== 'PLAYER' || eHp <= 0} className={`w-full py-5 cyber-btn font-black ${turn === 'PLAYER' ? 'bg-white text-black' : 'bg-gray-800 text-gray-500'}`}>
-                            {turn === 'PLAYER' ? 'EXECUTER_ATTAQUE' : 'SYNCHRONISATION...'}
-                        </button>
-                    </div>
-                </motion.div>
-            );
-        };
-
-        const Shop = ({ db, setDb, playSfx }) => (
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-6">
-                 <h2 className="text-center text-[10px] text-violet-500 tracking-[0.5em] mb-4 uppercase">// Black_Market_Node</h2>
-                 
-                 <div className="space-y-4">
-                    <h3 className="text-xs text-white/40 border-b border-white/5 pb-2 uppercase tracking-widest">Implants_Sujets</h3>
-                    {IMPLANTS.map(imp => (
-                        <div key={imp.id} className="glass p-4 rounded-xl flex justify-between items-center group">
-                            <div className="flex gap-4 items-center">
-                                <div className="text-2xl p-2 bg-white/5 rounded-lg">{imp.icon}</div>
-                                <div>
-                                    <div className="text-xs font-bold">{imp.name}</div>
-                                    <div className="text-[10px] text-cyan-500">+{imp.bonus}% {imp.stat}</div>
-                                </div>
-                            </div>
-                            <button onClick={() => {
-                                if(db.creds >= imp.price) {
-                                    setDb(p => ({ ...p, creds: p.creds - imp.price, inventory: [...p.inventory, imp.id] }));
-                                    playSfx('level');
-                                } else playSfx('error');
-                            }} className="px-4 py-2 border border-violet-500 text-violet-500 rounded font-black text-[10px] hover:bg-violet-500 hover:text-white transition-all">
-                                {db.inventory.includes(imp.id) ? 'INSTALLÉ' : `${imp.price}₡`}
-                            </button>
-                        </div>
-                    ))}
-                 </div>
-
-                 <div className="space-y-4 pt-6">
-                    <h3 className="text-xs text-white/40 border-b border-white/5 pb-2 uppercase tracking-widest">Skins_Neural</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                        {AVATARS.map(a => (
-                            <div key={a.id} className="glass p-4 rounded-xl text-center flex flex-col items-center">
-                                <div className="text-3xl mb-2">{a.icon}</div>
-                                <div className="text-[10px] font-bold mb-1 uppercase">{a.name}</div>
-                                <button onClick={() => {
-                                    if(db.unlocked.includes(a.id)) {
-                                        setDb(p => ({...p, avatar: a.icon, avatarName: a.name}));
-                                    } else if(db.creds >= a.cost) {
-                                        setDb(p => ({ ...p, creds: p.creds - a.cost, unlocked: [...p.unlocked, a.id] }));
-                                    }
-                                }} className={`w-full py-1 text-[8px] rounded border ${db.unlocked.includes(a.id) ? 'border-cyan-500 text-cyan-500' : 'border-pink-500 text-pink-500'}`}>
-                                    {db.unlocked.includes(a.id) ? (db.avatar === a.icon ? 'EQUIPPED' : 'USE') : `BUY ${a.cost}₡`}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                 </div>
-            </motion.div>
-        );
-
-        const Config = ({ db, setDb }) => (
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-6">
-                <div className="glass p-8 rounded-[40px] space-y-8">
-                    <div className="flex justify-between items-center">
-                        <span className="text-[10px] tracking-[0.2em]">AUDIO_FEEDBACK</span>
-                        <button onClick={() => setDb(p => ({...p, settings: {...p.settings, sfx: !p.settings.sfx}}))} className={`w-14 h-6 rounded-full p-1 transition-all ${db.settings.sfx ? 'bg-cyan-500' : 'bg-white/10'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full transition-all ${db.settings.sfx ? 'translate-x-8' : ''}`} />
-                        </button>
-                    </div>
-
-                    <div className="pt-8 border-t border-white/5">
-                        <div className="text-[10px] text-gray-500 mb-4 uppercase text-center">Gestion de l'Archive</div>
-                        <button onClick={() => {
-                            const blob = new Blob([JSON.stringify(db)], {type: 'application/json'});
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob);
-                            a.download = `NEURAL_SAVE_${db.user}.json`;
-                            a.click();
-                        }} className="w-full py-4 border border-white/10 rounded-xl text-[10px] font-bold mb-4 hover:bg-white/5">EXPORTER_SAVE.BIN</button>
-                        
-                        <button onClick={() => {
-                            if(confirm("EFFACER LA MÉMOIRE NEURALE ?")) {
-                                localStorage.removeItem('FQ_V16_ULTRA');
-                                window.location.reload();
-                            }
-                        }} className="w-full py-4 text-red-500 text-[8px] font-black tracking-widest border border-red-500/20 rounded-xl">WIPE_SYSTEM_CORE</button>
-                    </div>
-                </div>
-                <div className="text-center text-[8px] text-white/20 uppercase tracking-[0.5em]">Fitness Quest v16.4.0 // Build 2024.X</div>
-            </motion.div>
-        );
-
-        const Auth = ({ onDone }) => {
-            const [val, setVal] = useState("");
-            return (
-                <div className="h-screen flex items-center justify-center p-8">
-                    <motion.div initial={{y:20, opacity:0}} animate={{y:0, opacity:1}} className="glass p-10 rounded-[50px] w-full border-t-4 border-cyan-500">
-                        <h1 className="font-o text-2xl text-cyan-400 mb-2">IDENT_LOGIN</h1>
-                        <p className="text-[10px] text-gray-500 mb-10 tracking-[0.3em] uppercase">Entrez votre code neural</p>
-                        <input autoFocus type="text" value={val} onChange={(e) => setVal(e.target.value.toUpperCase())} placeholder="OPERATOR_NAME..." className="w-full bg-white/5 border-b-2 border-cyan-500 p-4 font-o text-white mb-10 outline-none tracking-widest" />
-                        <button onClick={() => val && onDone(val)} className="w-full py-5 bg-cyan-500 text-black font-o text-xs cyber-btn font-black">INITIALISER_LA_LIAISON</button>
-                    </motion.div>
                 </div>
             );
         };
